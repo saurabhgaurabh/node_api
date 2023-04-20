@@ -174,6 +174,7 @@ exports.login_user = async (req, res) => {
 exports.register_user = async (req, res) => {
     try {
         const { name, mobile, email, password } = req.body;
+        console.log(name)
         if (name) {
             if (mobile) {
                 if (email) {

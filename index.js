@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 const PORT = 8000
 const bodyParser = require('body-parser');
+const nodemailer = require('nodemailer');
+const otpGenerator = require('otp-generator');
 // const router = express.router()
 const mainRouter = require('./routes/routes');
 
