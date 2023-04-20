@@ -171,10 +171,33 @@ exports.login_user = async (req, res) => {
 }
 
 // register user api
-exports.register_user = async (req, res)=>{
+exports.register_user = async (req, res) => {
     try {
-        
+        const { name, mobile, email, password } = req.body;
+        if (name) {
+            if (mobile) {
+                if (email) {
+                    if (password) {
+                        db.query(`insert into register_user set ?`, { name, mobile, email, password }, (error, result) => {
+                            if (error) {
+                                res.status(200).json({ status: true, message: "incorrect" })
+                            } else {
+                                res.status(200).json({ status: true, res: result })
+                            }
+                        })
+                    } else {
+                        res.status(200).json({ status: true, message: "Password Required" })
+                    }
+                } else {
+                    res.status(200).json({ status: true, message: "Email Required." })
+                }
+            } else {
+                res.status(200).json({ status: true, message: "Mobile Required" })
+            }
+        } else {
+            res.status(200).json({ status: true, message: "Username Required" })
+        }
     } catch (error) {
-        
+        res.status(200).json({ status: true, message: "Error" })
     }
 }
