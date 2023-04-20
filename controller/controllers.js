@@ -65,7 +65,6 @@ exports.update_produuct = async (req, res) => {
         const discription = req.body.discription;
         const id = req.body.id;
         console.log(product_type, "product_type");
-
         if (id) {
             if (product_name) {
                 if (product_type) {
@@ -143,8 +142,8 @@ exports.delete_product = async (req, res) => {
     }
 };
 
-//login api
-exports.register_user = async (req, res) => {
+//register api
+exports.login_user = async (req, res) => {
     try {
         const { username, email, password } = req.body;
         if (username) {
