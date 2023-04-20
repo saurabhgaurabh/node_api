@@ -1,5 +1,6 @@
 const db = require('../model/connection');
 const nodemailer = require('nodemailer');
+const otpGenerator = require('otp-generator');
 
 
 // add product api
@@ -141,7 +142,6 @@ exports.delete_product = async (req, res) => {
         res.status(200).json({ status: false, message: "Can not Delete" });
     }
 };
-
 //login user api
 exports.login_user = async (req, res) => {
     try {
@@ -169,7 +169,6 @@ exports.login_user = async (req, res) => {
         res.status(200).json({ status: true, message: "Error" })
     }
 }
-
 // register user api
 exports.register_user = async (req, res) => {
     try {
@@ -201,4 +200,35 @@ exports.register_user = async (req, res) => {
     } catch (error) {
         res.status(200).json({ status: true, message: "Error" })
     }
+}
+// demo email with otp 
+exports.email_otp = async (req, res) => {
+    // Generate OTP
+    const otp = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: false });
+
+    // Send OTP to user via email
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: 'saurabhprajapati0792@gmail.com',
+            pass: 'xumeiggxkbgpahfz'
+        }
+    });
+
+    const mailOptions = {
+        from: 'saurabhprajapati0792@gmail.com',
+        to: "leadchainsaurabh7@gmail.com",
+        subject: 'Registration OTP',
+        text: `Your OTP is: ${otp}`
+    };
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+            console.log(error);
+            res.status(500).send('Failed to send OTP');
+        } else {
+            console.log(`OTP sent to ${req.body.email}: ${otp}`);
+            res.status(200).send('OTP sent successfully');
+        }
+    });
+
 }
