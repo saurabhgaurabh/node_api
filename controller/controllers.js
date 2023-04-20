@@ -142,7 +142,7 @@ exports.delete_product = async (req, res) => {
     }
 };
 
-//register api
+//login user api
 exports.login_user = async (req, res) => {
     try {
         const { username, email, password } = req.body;
@@ -167,5 +167,14 @@ exports.login_user = async (req, res) => {
         }
     } catch (error) {
         res.status(200).json({ status: true, message: "Error" })
+    }
+}
+
+// register user api
+exports.register_user = async (req, res)=>{
+    try {
+        
+    } catch (error) {
+        
     }
 }
