@@ -18,7 +18,6 @@ exports.add_product = async (req, res) => {
                             res.status(200).json({ status: false, message: "product alredy exist!" })
                         } else {
                             db.query(`INSERT INTO product SET ?`, { product_name, product_type, discription }, (error, result) => {
-                                console.log("work")
                                 if (error) {
                                     res.status(200).json({ status: false, message: "Product is't Inserted!" })
                                 } else {
@@ -240,11 +239,19 @@ exports.add_teacher_management = async (req, res) => {
         const { teacher_name, age, email_teacher, address_teacher, username_teacher, password, school_id, eligibility, no_of_degree, experience, position } = req.body;
         if (teacher_name) {
             if (age) {
-                db.query(`insert into addteachermanagement set ?`, { teacher_name, age, email_teacher, address_teacher, username_teacher, password, school_id, eligibility, no_of_degree, experience, position }, (error, result) => {
+                db.query(`select * from addteachermanagement where teacher_name = '${teacher_name}'`, (error, result) => {
                     if (error) {
-                        res.status(200).json({ status: true, message: "Incorrect Details" })
+                        res.status(200).json({ status: true, message: "Something Missing" })
+                    } else if (result.length > 0) {
+                        res.status(200).json({ status: true, message: "Already Exist" })
                     } else {
-                        res.status(200).json({ status: true, res: result })
+                        db.query(`insert into addteachermanagement set ?`, { teacher_name, age, email_teacher, address_teacher, username_teacher, password, school_id, eligibility, no_of_degree, experience, position }, (error, result) => {
+                            if (error) {
+                                res.status(200).json({ status: true, message: "Incorrect Details" })
+                            } else {
+                                res.status(200).json({ status: true, res: result })
+                            }
+                        })
                     }
                 })
             } else {
