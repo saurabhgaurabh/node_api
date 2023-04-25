@@ -239,21 +239,37 @@ exports.add_teacher_management = async (req, res) => {
         const { teacher_name, age, email_teacher, address_teacher, username_teacher, password, school_id, eligibility, no_of_degree, experience, position } = req.body;
         if (teacher_name) {
             if (age) {
-                db.query(`select * from addteachermanagement where teacher_name = '${teacher_name}'`, (error, result) => {
-                    if (error) {
-                        res.status(200).json({ status: true, message: "Something Missing" })
-                    } else if (result.length > 0) {
-                        res.status(200).json({ status: true, message: "Already Exist" })
-                    } else {
-                        db.query(`insert into addteachermanagement set ?`, { teacher_name, age, email_teacher, address_teacher, username_teacher, password, school_id, eligibility, no_of_degree, experience, position }, (error, result) => {
-                            if (error) {
-                                res.status(200).json({ status: true, message: "Incorrect Details" })
+                if (email_teacher) {
+                    if (address_teacher) {
+                        if (username_teacher) {
+                            if (password) {
+                                db.query(`select * from addteachermanagement where teacher_name = '${teacher_name}'`, (error, result) => {
+                                    if (error) {
+                                        res.status(200).json({ status: true, message: "Something Missing" })
+                                    } else if (result.length > 0) {
+                                        res.status(200).json({ status: true, message: "Already Exist" })
+                                    } else {
+                                        db.query(`insert into addteachermanagement set ?`, { teacher_name, age, email_teacher, address_teacher, username_teacher, password, school_id, eligibility, no_of_degree, experience, position }, (error, result) => {
+                                            if (error) {
+                                                res.status(200).json({ status: true, message: "Incorrect Details" })
+                                            } else {
+                                                res.status(200).json({ status: true, res: result })
+                                            }
+                                        })
+                                    }
+                                })
                             } else {
-                                res.status(200).json({ status: true, res: result })
+                                res.status(200).json({ status: true, message: "Password Required" })
                             }
-                        })
+                        } else {
+                            res.status(200).json({ status: true, message: "Username Required" })
+                        }
+                    } else {
+                        res.status(200).json({ status: true, message: "Address Required" })
                     }
-                })
+                } else {
+                    res.status(200).json({ status: true, message: "Email Required" })
+                }
             } else {
                 res.status(200).json({ status: true, message: "age Required" })
             }
