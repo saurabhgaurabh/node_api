@@ -173,7 +173,6 @@ exports.login_user = async (req, res) => {
 exports.register_user = async (req, res) => {
     try {
         const { name, mobile, email, password } = req.body;
-        console.log(name)
         if (name) {
             if (mobile) {
                 if (email) {
@@ -203,32 +202,58 @@ exports.register_user = async (req, res) => {
 }
 // demo email with otp 
 exports.email_otp = async (req, res) => {
-    // Generate OTP
-    const otp = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: false });
+    try {
+        // Generate OTP
+        const otp = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: false });
 
-    // Send OTP to user via email
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: 'saurabhprajapati0792@gmail.com',
-            pass: 'xumeiggxkbgpahfz'
-        }
-    });
+        // Send OTP to user via email
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: 'saurabhprajapati0792@gmail.com',
+                pass: 'xumeiggxkbgpahfz'
+            }
+        });
+        const mailOptions = {
+            from: 'saurabhprajapati0792@gmail.com',
+            to: "leadchainsaurabh7@gmail.com",
+            subject: 'Registration OTP',
+            text: `Your OTP is: ${otp}`
+        };
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.log(error);
+                res.status(500).send('Failed to send OTP');
+            } else {
+                console.log(`OTP sent to ${req.body.email}: ${otp}`);
+                res.status(200).send('OTP sent successfully');
+            }
+        });
+    } catch (error) {
+        console.log(error)
+    }
+}
 
-    const mailOptions = {
-        from: 'saurabhprajapati0792@gmail.com',
-        to: "leadchainsaurabh7@gmail.com",
-        subject: 'Registration OTP',
-        text: `Your OTP is: ${otp}`
-    };
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.log(error);
-            res.status(500).send('Failed to send OTP');
+// add teacher management  api 
+exports.add_teacher_management = async (req, res) => {
+    try {
+        const { teacher_name, age, email_teacher, address_teacher, username_teacher, password, school_id, eligibility, no_of_degree, experience, position } = req.body;
+        if (teacher_name) {
+            if (age) {
+                db.query(`insert into addteachermanagement set ?`, { teacher_name, age, email_teacher, address_teacher, username_teacher, password, school_id, eligibility, no_of_degree, experience, position }, (error, result) => {
+                    if (error) {
+                        res.status(200).json({ status: true, message: "Incorrect Details" })
+                    } else {
+                        res.status(200).json({ status: true, res: result })
+                    }
+                })
+            } else {
+                res.status(200).json({ status: true, message: "age Required" })
+            }
         } else {
-            console.log(`OTP sent to ${req.body.email}: ${otp}`);
-            res.status(200).send('OTP sent successfully');
+            res.status(200).json({ status: 200, message: "Teacher Name Required" })
         }
-    });
-
+    } catch (error) {
+        res.status(200).json({ status: true, message: "Error" })
+    }
 }
