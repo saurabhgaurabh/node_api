@@ -244,9 +244,9 @@ exports.add_teacher_management = async (req, res) => {
                         if (username_teacher) {
                             if (password) {
                                 if (password === confirm_password) {
-                                    db.query(`select * from addteachermanagement where teacher_name = '${teacher_name}'`, (error, result) => {
+                                    db.query(`select * from addteachermanagement where teacher_name = '${teacher_name}'and  email_teacher = '${email_teacher}'`, (error, result) => {
                                         if (error) {
-                                            res.status(409).json({ status: true, message: "Duplicate Record" })
+                                            res.status(409).json({ status: true, message: "Duplicate Record Can't Accept" })
                                         } else if (result.length > 0) {
                                             res.status(422).json({ status: true, message: "Already Exist" })
                                         } else {
@@ -279,7 +279,7 @@ exports.add_teacher_management = async (req, res) => {
             }
         } else {
             res.status(200).json({ status: 200, message: "Teacher Name Required" })
-        }
+        }        
     } catch (error) {
         res.status(500).json({ status: true, message: "Internal Server Error" })
     }
