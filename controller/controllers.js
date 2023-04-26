@@ -236,28 +236,32 @@ exports.email_otp = async (req, res) => {
 // add teacher management  api 
 exports.add_teacher_management = async (req, res) => {
     try {
-        const { teacher_name, age, email_teacher, address_teacher, username_teacher, password, school_id, eligibility, no_of_degree, experience, position } = req.body;
+        const { teacher_name, age, email_teacher, address_teacher, username_teacher, password, confirm_password, school_id, eligibility, no_of_degree, experience, position } = req.body;
         if (teacher_name) {
             if (age) {
                 if (email_teacher) {
                     if (address_teacher) {
                         if (username_teacher) {
                             if (password) {
-                                db.query(`select * from addteachermanagement where teacher_name = '${teacher_name}'`, (error, result) => {
-                                    if (error) {
-                                        res.status(200).json({ status: true, message: "Something Missing" })
-                                    } else if (result.length > 0) {
-                                        res.status(200).json({ status: true, message: "Already Exist" })
-                                    } else {
-                                        db.query(`insert into addteachermanagement set ?`, { teacher_name, age, email_teacher, address_teacher, username_teacher, password, school_id, eligibility, no_of_degree, experience, position }, (error, result) => {
-                                            if (error) {
-                                                res.status(200).json({ status: true, message: "Incorrect Details" })
-                                            } else {
-                                                res.status(200).json({ status: true, res: result })
-                                            }
-                                        })
-                                    }
-                                })
+                                if (password === confirm_password) {
+                                    db.query(`select * from addteachermanagement where teacher_name = '${teacher_name}'`, (error, result) => {
+                                        if (error) {
+                                            res.status(409).json({ status: true, message: "Duplicate Record" })
+                                        } else if (result.length > 0) {
+                                            res.status(422).json({ status: true, message: "Already Exist" })
+                                        } else {
+                                            db.query(`insert into addteachermanagement set ?`, { teacher_name, age, email_teacher, address_teacher, username_teacher, password, school_id, eligibility, no_of_degree, experience, position }, (error, result) => {
+                                                if (error) {
+                                                    res.status(200).json({ status: true, message: "Incorrect Details" })
+                                                } else {
+                                                    res.status(200).json({ status: true, res: result })
+                                                }
+                                            })
+                                        }
+                                    })
+                                } else {
+                                    res.status(400).json({ status: true, message: "password Mismatch" })
+                                }
                             } else {
                                 res.status(200).json({ status: true, message: "Password Required" })
                             }
@@ -277,6 +281,6 @@ exports.add_teacher_management = async (req, res) => {
             res.status(200).json({ status: 200, message: "Teacher Name Required" })
         }
     } catch (error) {
-        res.status(200).json({ status: true, message: "Error" })
+        res.status(500).json({ status: true, message: "Internal Server Error" })
     }
 }
