@@ -13,6 +13,7 @@ router.post('/login_user',controller.login_user);
 router.post('/register_user',controller.register_user);
 router.post('/email_otp',controller.email_otp);
 router.post('/add_teacher_management',controller.add_teacher_management);
+router.post('/delete_add_teacher_management',controller.delete_add_teacher_management);
 
 
 

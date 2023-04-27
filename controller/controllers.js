@@ -113,14 +113,11 @@ exports.delete_product = async (req, res) => {
         if (id) {
             db.query(`select id from product where id = '${id}'`, (error, result) => {
                 if (error) {
-                    console.log(error);
                     res.status(200).json({ status: false, message: "Can not delete this" });
                 } else {
-                    console.log(result, "resultresult    ")
                     if (result.length > 0) {
                         db.query(`delete from product where id  = '${id}'`, (error, result) => {
                             if (error) {
-                                console.log(error);
                                 res.status(200).json({ status: false, message: "Product can't delete" });
                             } else {
                                 res.status(200).json({ status: true, message: "Deleted Successfullt" });
@@ -135,10 +132,9 @@ exports.delete_product = async (req, res) => {
         } else {
             res.status(200).json({ status: false, message: "Can not delete" });
         }
-
     } catch (error) {
         console.log(error);
-        res.status(200).json({ status: false, message: "Can not Delete" });
+        res.status(500).json({ status: true, message: "Internal Server Error" })
     }
 };
 //login user api
@@ -279,7 +275,21 @@ exports.add_teacher_management = async (req, res) => {
             }
         } else {
             res.status(200).json({ status: 200, message: "Teacher Name Required" })
-        }        
+        }
+    } catch (error) {
+        res.status(500).json({ status: true, message: "Internal Server Error" })
+    }
+}
+
+// delete add teacher management api
+exports.delete_add_teacher_management = async (req, res) => {
+    const id = req.body.id;
+    try {
+        if (id) {
+            db.query(`select * from addteachermanagement `)
+        } else {
+            res.status(200).json({ status: true, message: "can not delete" })
+        }
     } catch (error) {
         res.status(500).json({ status: true, message: "Internal Server Error" })
     }
