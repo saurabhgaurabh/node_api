@@ -1,6 +1,8 @@
 const db = require('../model/connection');
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
 const otpGenerator = require('otp-generator');
+const bcrypt = require('bcrypt')
+const speakeasy = require('speakeasy')
 
 
 // add product api
@@ -167,18 +169,45 @@ exports.login_user = async (req, res) => {
 // register user api
 exports.register_user = async (req, res) => {
     try {
-        const { name, mobile, email, password } = req.body;
+        var { id, name, mobile, email, password } = req.body;
+        const otp = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: false });
+        const salt = bcrypt.genSaltSync(10);
+        password = bcrypt.hashSync(password, salt);
         if (name) {
             if (mobile) {
                 if (email) {
                     if (password) {
-                        db.query(`insert into register_user set ?`, { name, mobile, email, password }, (error, result) => {
+                        var secret = speakeasy.generateSecret();
+                        console.log(secret, "secret")
+                        var myOtp = speakeasy.totp({
+                            secret: secret.base32,
+                            encoding: 'base32'
+                        });
+                        console.log(myOtp, "token")
+                        let transporter = nodemailer.createTransport({
+                            host: "smtp.gmail.com",
+                            port: 587,
+                            secure: false, // true for 465, false for other ports
+                            auth: {
+                                user: 'leadchainsaurabh7@gmail.com',
+                                pass: 'szjfpgixdiaqhema'
+                            },
+                        });
+
+                        db.query(`insert into register_user set ?`, { name, mobile, email, password, otp: myOtp, secret: secret.base32 }, (error, result) => {
                             if (error) {
                                 res.status(200).json({ status: true, message: "incorrect" })
                             } else {
                                 res.status(200).json({ status: true, res: result })
                             }
                         })
+                        let info = await transporter.sendMail({
+                            from: '"Patiram Production 👻" <leadchainsaurabh7@gmail.com>', // sender address
+                            to: `${email}`, // list of receivers
+                            subject: "Patiram.in ✔", // Subject line
+                            text: `Hello world your opt is ${myOtp}?`, // plain text body
+                            html: `<b>This is my ${myOtp} otp</b>`, // html body
+                        });
                     } else {
                         res.status(200).json({ status: true, message: "Password Required" })
                     }
@@ -192,43 +221,50 @@ exports.register_user = async (req, res) => {
             res.status(200).json({ status: true, message: "Username Required" })
         }
     } catch (error) {
-        res.status(200).json({ status: true, message: "Error" })
+        res.status(500).json({ status: true, message: `Internal Server Error = ${error}` })
     }
 }
-// demo email with otp 
-exports.email_otp = async (req, res) => {
-    try {
-        // Generate OTP
-        const otp = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: false });
-
-        // Send OTP to user via email
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: 'saurabhprajapati0792@gmail.com',
-                pass: 'xumeiggxkbgpahfz'
+//verify otp api
+exports.verify_otp = async (req, res) => {
+    const params = req.body
+    if (params.email) {
+        if (params.otp) {
+            try {
+                db.query(`select secret from register_user where email = '${params.email}'`, (error, result) => {
+                    if (error) {
+                        res.status(404).json({ status: false, message: `Invalid Email ${error}` })
+                    } else {
+                        console.log(result[0].secret, "result[0].secret")
+                        var tokenValidates = speakeasy.totp.verify({
+                            secret: result[0].secret,
+                            encoding: 'base32',
+                            token: params.otp,
+                            window: 10,
+                        });
+                        console.log(tokenValidates, "tokenValidates")
+                        if (tokenValidates) {
+                            db.query(`update register_user set flag = 1 where email = '${params.email}'`, (error, result) => {
+                                if (error) {
+                                    res.status(404).json({ status: false, message: `Token not found ${error}` })
+                                } else {
+                                    res.status(200).json({ status: true, message: `Varification Sucessfully` })
+                                }
+                            })
+                        } else {
+                            res.status(500).json({ status: false, message: `token not valid ${error}` })
+                        }
+                    }
+                })
+            } catch (error) {
+                res.status(500).json({ status: false, message: `Somthing went wrong ${error}` })
             }
-        });
-        const mailOptions = {
-            from: 'saurabhprajapati0792@gmail.com',
-            to: "leadchainsaurabh7@gmail.com",
-            subject: 'Registration OTP',
-            text: `Your OTP is: ${otp}`
-        };
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.log(error);
-                res.status(500).send('Failed to send OTP');
-            } else {
-                console.log(`OTP sent to ${req.body.email}: ${otp}`);
-                res.status(200).send('OTP sent successfully');
-            }
-        });
-    } catch (error) {
-        console.log(error)
+        } else {
+            res.status(200).json({ status: false, message: "OTP Required" })
+        }
+    } else {
+        res.status(200).json({ status: false, message: "Email Required" })
     }
 }
-
 // add teacher management  api 
 exports.add_teacher_management = async (req, res) => {
     try {
@@ -280,7 +316,6 @@ exports.add_teacher_management = async (req, res) => {
         res.status(500).json({ status: true, message: "Internal Server Error" })
     }
 }
-
 // delete add teacher management api
 exports.delete_add_teacher_management = async (req, res) => {
     const id = req.body.id;
@@ -294,3 +329,4 @@ exports.delete_add_teacher_management = async (req, res) => {
         res.status(500).json({ status: true, message: "Internal Server Error" })
     }
 }
+// register api
