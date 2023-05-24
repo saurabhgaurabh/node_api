@@ -4,7 +4,6 @@ const otpGenerator = require('otp-generator');
 const bcrypt = require('bcrypt')
 const speakeasy = require('speakeasy')
 
-
 // add product api
 exports.add_product = async (req, res) => {
     try {
@@ -42,6 +41,7 @@ exports.add_product = async (req, res) => {
         console.log(error)
     }
 }
+
 // get product api
 exports.get_product = async (req, res) => {
     try {
@@ -59,6 +59,7 @@ exports.get_product = async (req, res) => {
         res.status(200).json({ status: false, message: "Products not found" });
     }
 }
+
 // update product api
 exports.update_produuct = async (req, res) => {
     try {
@@ -108,6 +109,7 @@ exports.update_produuct = async (req, res) => {
 
     }
 }
+
 // delete product api 
 exports.delete_product = async (req, res) => {
     const id = req.body.id;
@@ -139,6 +141,7 @@ exports.delete_product = async (req, res) => {
         res.status(500).json({ status: true, message: "Internal Server Error" })
     }
 };
+
 //login user api
 exports.login_user = async (req, res) => {
     try {
@@ -166,17 +169,33 @@ exports.login_user = async (req, res) => {
         res.status(200).json({ status: true, message: "Error" })
     }
 }
+
 // register user api
 exports.register_user = async (req, res) => {
     try {
         var { id, name, mobile, email, password } = req.body;
-        const otp = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: false });
         const salt = bcrypt.genSaltSync(10);
         password = bcrypt.hashSync(password, salt);
         if (name) {
             if (mobile) {
                 if (email) {
                     if (password) {
+                        db.query(`select * from register_user where email = '${email}' `, (error, result) => {
+                            if (error) {
+                                res.status(500).json({ status: false, message: `database error '${error}'` })
+                            } else if (result.length > 0) {
+                                res.status(400).json({ status: true, message: `Email already registered` });
+                            } else {
+                                db.query(`insert into register_user set ?`, { name, mobile, email, password, otp: myOtp, secret: secret.base32 }, (error, result) => {
+                                    if (error) {
+                                        res.status(200).json({ status: true, message: "incorrect" })
+                                    } else {
+                                        res.status(200).json({ status: true, res: result })
+                                    }
+                                })
+                            }
+                        })
+
                         var secret = speakeasy.generateSecret();
                         console.log(secret, "secret")
                         var myOtp = speakeasy.totp({
@@ -193,19 +212,11 @@ exports.register_user = async (req, res) => {
                                 pass: 'szjfpgixdiaqhema'
                             },
                         });
-
-                        db.query(`insert into register_user set ?`, { name, mobile, email, password, otp: myOtp, secret: secret.base32 }, (error, result) => {
-                            if (error) {
-                                res.status(200).json({ status: true, message: "incorrect" })
-                            } else {
-                                res.status(200).json({ status: true, res: result })
-                            }
-                        })
                         let info = await transporter.sendMail({
                             from: '"Patiram Production 👻" <leadchainsaurabh7@gmail.com>', // sender address
                             to: `${email}`, // list of receivers
                             subject: "Patiram.in ✔", // Subject line
-                            text: `Hello world your opt is ${myOtp}?`, // plain text body
+                            text: `Hello user your opt is ${myOtp}?`, // plain text body
                             html: `<b>This is my ${myOtp} otp</b>`, // html body
                         });
                     } else {
@@ -224,9 +235,11 @@ exports.register_user = async (req, res) => {
         res.status(500).json({ status: true, message: `Internal Server Error = ${error}` })
     }
 }
+
 //verify otp api
 exports.verify_otp = async (req, res) => {
     const params = req.body
+    console.log(params,"params")
     if (params.email) {
         if (params.otp) {
             try {
@@ -234,14 +247,12 @@ exports.verify_otp = async (req, res) => {
                     if (error) {
                         res.status(404).json({ status: false, message: `Invalid Email ${error}` })
                     } else {
-                        console.log(result[0].secret, "result[0].secret")
                         var tokenValidates = speakeasy.totp.verify({
                             secret: result[0].secret,
                             encoding: 'base32',
                             token: params.otp,
-                            window: 10,
+                            window: 100,
                         });
-                        console.log(tokenValidates, "tokenValidates")
                         if (tokenValidates) {
                             db.query(`update register_user set flag = 1 where email = '${params.email}'`, (error, result) => {
                                 if (error) {
@@ -265,6 +276,7 @@ exports.verify_otp = async (req, res) => {
         res.status(200).json({ status: false, message: "Email Required" })
     }
 }
+
 // add teacher management  api 
 exports.add_teacher_management = async (req, res) => {
     try {
@@ -316,6 +328,7 @@ exports.add_teacher_management = async (req, res) => {
         res.status(500).json({ status: true, message: "Internal Server Error" })
     }
 }
+
 // delete add teacher management api
 exports.delete_add_teacher_management = async (req, res) => {
     const id = req.body.id;
@@ -329,4 +342,101 @@ exports.delete_add_teacher_management = async (req, res) => {
         res.status(500).json({ status: true, message: "Internal Server Error" })
     }
 }
-// register api
+
+exports.register_test = async (req, res) => {
+    try {
+        const { id, name, mobile, email, password } = req.body;
+        if (!name) return res.status(400).json({ status: false, message: "Username is required" });
+        if (!mobile) return res.status(400).json({ status: false, message: "Mobile number is required" });
+        if (!email) return res.status(400).json({ status: false, message: "Email is required" });
+        if (!password) return res.status(400).json({ status: false, message: "Password is required" });
+        db.query(`SELECT * FROM register_user WHERE email = '${email}'`, (error, result) => {
+            if (error) {
+                return res.status(500).json({ status: false, message: `Database error 1: ${error}` });
+            }
+            if (result.length > 0) {
+                const user = result[0];
+
+                // Check if user is already registered and verified
+                if (user.flag) {
+                    return res.status(400).json({ status: false, message: "User already registered and verified" });
+                }
+                // User exists but is not verified, update the OTP
+                const salt = bcrypt.genSaltSync(10);
+                const hashedPassword = bcrypt.hashSync(password, salt);
+
+                var secret = speakeasy.generateSecret().base32;
+                console.log(secret, "secret")
+                var otp = speakeasy.totp({
+                    secret: secret,
+                    encoding: 'base32'
+                });
+                console.log(otp, "otp")
+
+
+                db.query(`UPDATE register_user SET otp = '${otp}', secret = '${secret}', password = '${hashedPassword}' WHERE email = '${email}'`, (updateError) => {
+                    if (updateError) {
+                        return res.status(500).json({ status: false, message: `Database error 2: ${updateError}` });
+                    }
+
+                    // Send updated OTP to the user's email
+                    sendOtpToEmail(email, otp);
+
+                    return res.status(200).json({ status: true, message: "OTP updated. Please verify your email." });
+                });
+            } else {
+                // New user, generate OTP and insert into database
+                var secret = speakeasy.generateSecret().base32;
+                var otp = speakeasy.totp({
+                    secret: secret,
+                    encoding: 'base32'
+                });
+                const salt = bcrypt.genSaltSync(10);
+                const hashedPassword = bcrypt.hashSync(password, salt);
+
+                db.query(
+                    "INSERT INTO register_user (name, mobile, email, secret, password, otp) VALUES (?, ?, ?, ?, ?, ?)",
+                    [name, mobile, email, secret, hashedPassword, otp],
+                    (insertError) => {
+                        if (insertError) {
+                            return res.status(500).json({ status: false, message: `Database error 3: ${insertError}` });
+                        }
+
+                        // Send OTP to the user's email
+                        sendOtpToEmail(email, otp);
+
+                        return res.status(200).json({ status: true, message: "User registered. Please verify your email." });
+                    }
+                );
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ status: false, message: `Internal Server Error 4: ${error}` });
+    }
+}
+
+async function sendOtpToEmail(email, otp) {
+    try {
+        const transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 587,
+            secure: false, // true for 465, false for other ports
+            auth: {
+                user: "leadchainsaurabh7@gmail.com",
+                pass: "szjfpgixdiaqhema",
+            },
+        });
+
+        const info = await transporter.sendMail({
+            from: '"Patiram Production 👻" <leadchainsaurabh7@gmail.com>',
+            to: email,
+            subject: "Patiram.in ✔",
+            text: `Hello user, your OTP is ${otp}`,
+            html: `<b>This is your OTP: ${otp}</b>`,
+        });
+
+        console.log("Email sent:", info.response);
+    } catch (error) {
+        console.error("Error sending email:", error);
+    }
+}
