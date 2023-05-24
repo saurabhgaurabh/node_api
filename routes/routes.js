@@ -10,11 +10,10 @@ router.get('/get_product',controller.get_product);
 router.post('/update_product',controller.update_produuct);
 router.post('/delete_product',controller.delete_product);
 router.post('/login_user',controller.login_user);
-router.post('/register_user',controller.register_user);
-router.post('/register_test',controller.register_test);
+router.post('/register',controller.register);
+router.post('/verify_otp',controller.verify_otp)
 router.post('/add_teacher_management',controller.add_teacher_management);
 router.post('/delete_add_teacher_management',controller.delete_add_teacher_management);
-router.post('/verify_otp',controller.verify_otp)
 
 
 

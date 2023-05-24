@@ -3,6 +3,7 @@ const nodemailer = require("nodemailer");
 const otpGenerator = require('otp-generator');
 const bcrypt = require('bcrypt')
 const speakeasy = require('speakeasy')
+const jwt = require('jsonwebtoken');
 
 // add product api
 exports.add_product = async (req, res) => {
@@ -142,6 +143,111 @@ exports.delete_product = async (req, res) => {
     }
 };
 
+// register user api
+exports.register = async (req, res) => {
+    try {
+        const { name, mobile, email, password } = req.body;
+        if (!name) return res.status(400).json({ status: false, message: "Username is required" });
+        if (!mobile) return res.status(400).json({ status: false, message: "Mobile number is required" });
+        if (!email) return res.status(400).json({ status: false, message: "Email is required" });
+        if (!password) return res.status(400).json({ status: false, message: "Password is required" });
+        db.query(`SELECT * FROM register_user WHERE email = '${email}'`, (error, result) => {
+            if (error) {
+                return res.status(500).json({ status: false, message: `Database error while select: ${error}` });
+            }
+            if (result.length > 0) {
+                const user = result[0];
+                // Check if user is already registered and verified
+                if (user.flag) {
+                    return res.status(400).json({ status: false, message: "User already registered and verified" });
+                }
+                // User exists but is not verified, update the OTP
+                const salt = bcrypt.genSaltSync(10);
+                const hashedPassword = bcrypt.hashSync(password, salt);
+
+                var secret = speakeasy.generateSecret().base32;
+                console.log(secret, "secret")
+                var otp = speakeasy.totp({
+                    secret: secret,
+                    encoding: 'base32'
+                });
+                db.query(`UPDATE register_user SET otp = '${otp}', secret = '${secret}', password = '${hashedPassword}' WHERE email = '${email}'`, (updateError) => {
+                    if (updateError) {
+                        return res.status(500).json({ status: false, message: `Database error while update: ${updateError}` });
+                    }
+                    sendOtpToEmail(email, otp); // Send updated OTP to the user's email
+
+                    return res.status(200).json({ status: true, message: "OTP updated. Please verify your email." });
+                });
+            } else {
+                var secret = speakeasy.generateSecret().base32; // New user, generate OTP and insert into database
+                var otp = speakeasy.totp({
+                    secret: secret,
+                    encoding: 'base32'
+                });
+                const salt = bcrypt.genSaltSync(10);
+                const hashedPassword = bcrypt.hashSync(password, salt);
+
+                db.query(
+                    "INSERT INTO register_user (name, mobile, email, secret, password, otp) VALUES (?, ?, ?, ?, ?, ?)",
+                    [name, mobile, email, secret, hashedPassword, otp],
+                    (insertError) => {
+                        if (insertError) {
+                            return res.status(500).json({ status: false, message: `Database error while insert: ${insertError}` });
+                        }
+                        sendOtpToEmail(email, otp);  // Send OTP to the user's email
+                        return res.status(200).json({ status: true, message: "User registered. Please verify your email." });
+                    }
+                );
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ status: false, message: `Internal Server Error 4: ${error}` });
+    }
+}
+
+//verify otp api
+exports.verify_otp = async (req, res) => {
+    const params = req.body
+    console.log(params, "params")
+    if (params.email) {
+        if (params.otp) {
+            try {
+                db.query(`select secret from register_user where email = '${params.email}'`, (error, result) => {
+                    if (error) {
+                        res.status(404).json({ status: false, message: `Invalid Email ${error}` })
+                    } else {
+                        var tokenValidates = speakeasy.totp.verify({
+                            secret: result[0].secret,
+                            encoding: 'base32',
+                            token: params.otp,
+                            window: 600,
+                        });
+                        if (tokenValidates) {
+                            db.query(`update register_user set flag = 1 where email = '${params.email}'`, (error, result) => {
+                                if (error) {
+                                    res.status(404).json({ status: false, message: `Token not found ${error}` })
+                                } else {
+                                    const token = jwt.sign({ email: params.email }, 'secretKey');
+                                    res.status(200).json({ status: true, message: `Varification Sucessfully`,token: token })
+                                }
+                            })
+                        } else {
+                            res.status(500).json({ status: false, message: `token not valid ${error}` })
+                        }
+                    }
+                })
+            } catch (error) {
+                res.status(500).json({ status: false, message: `Somthing went wrong ${error}` })
+            }
+        } else {
+            res.status(200).json({ status: false, message: "OTP Required" })
+        }
+    } else {
+        res.status(200).json({ status: false, message: "Email Required" })
+    }
+}
+
 //login user api
 exports.login_user = async (req, res) => {
     try {
@@ -167,113 +273,6 @@ exports.login_user = async (req, res) => {
         }
     } catch (error) {
         res.status(200).json({ status: true, message: "Error" })
-    }
-}
-
-// register user api
-exports.register_user = async (req, res) => {
-    try {
-        var { id, name, mobile, email, password } = req.body;
-        const salt = bcrypt.genSaltSync(10);
-        password = bcrypt.hashSync(password, salt);
-        if (name) {
-            if (mobile) {
-                if (email) {
-                    if (password) {
-                        db.query(`select * from register_user where email = '${email}' `, (error, result) => {
-                            if (error) {
-                                res.status(500).json({ status: false, message: `database error '${error}'` })
-                            } else if (result.length > 0) {
-                                res.status(400).json({ status: true, message: `Email already registered` });
-                            } else {
-                                db.query(`insert into register_user set ?`, { name, mobile, email, password, otp: myOtp, secret: secret.base32 }, (error, result) => {
-                                    if (error) {
-                                        res.status(200).json({ status: true, message: "incorrect" })
-                                    } else {
-                                        res.status(200).json({ status: true, res: result })
-                                    }
-                                })
-                            }
-                        })
-
-                        var secret = speakeasy.generateSecret();
-                        console.log(secret, "secret")
-                        var myOtp = speakeasy.totp({
-                            secret: secret.base32,
-                            encoding: 'base32'
-                        });
-                        console.log(myOtp, "token")
-                        let transporter = nodemailer.createTransport({
-                            host: "smtp.gmail.com",
-                            port: 587,
-                            secure: false, // true for 465, false for other ports
-                            auth: {
-                                user: 'leadchainsaurabh7@gmail.com',
-                                pass: 'szjfpgixdiaqhema'
-                            },
-                        });
-                        let info = await transporter.sendMail({
-                            from: '"Patiram Production 👻" <leadchainsaurabh7@gmail.com>', // sender address
-                            to: `${email}`, // list of receivers
-                            subject: "Patiram.in ✔", // Subject line
-                            text: `Hello user your opt is ${myOtp}?`, // plain text body
-                            html: `<b>This is my ${myOtp} otp</b>`, // html body
-                        });
-                    } else {
-                        res.status(200).json({ status: true, message: "Password Required" })
-                    }
-                } else {
-                    res.status(200).json({ status: true, message: "Email Required." })
-                }
-            } else {
-                res.status(200).json({ status: true, message: "Mobile Required" })
-            }
-        } else {
-            res.status(200).json({ status: true, message: "Username Required" })
-        }
-    } catch (error) {
-        res.status(500).json({ status: true, message: `Internal Server Error = ${error}` })
-    }
-}
-
-//verify otp api
-exports.verify_otp = async (req, res) => {
-    const params = req.body
-    console.log(params,"params")
-    if (params.email) {
-        if (params.otp) {
-            try {
-                db.query(`select secret from register_user where email = '${params.email}'`, (error, result) => {
-                    if (error) {
-                        res.status(404).json({ status: false, message: `Invalid Email ${error}` })
-                    } else {
-                        var tokenValidates = speakeasy.totp.verify({
-                            secret: result[0].secret,
-                            encoding: 'base32',
-                            token: params.otp,
-                            window: 100,
-                        });
-                        if (tokenValidates) {
-                            db.query(`update register_user set flag = 1 where email = '${params.email}'`, (error, result) => {
-                                if (error) {
-                                    res.status(404).json({ status: false, message: `Token not found ${error}` })
-                                } else {
-                                    res.status(200).json({ status: true, message: `Varification Sucessfully` })
-                                }
-                            })
-                        } else {
-                            res.status(500).json({ status: false, message: `token not valid ${error}` })
-                        }
-                    }
-                })
-            } catch (error) {
-                res.status(500).json({ status: false, message: `Somthing went wrong ${error}` })
-            }
-        } else {
-            res.status(200).json({ status: false, message: "OTP Required" })
-        }
-    } else {
-        res.status(200).json({ status: false, message: "Email Required" })
     }
 }
 
@@ -340,78 +339,6 @@ exports.delete_add_teacher_management = async (req, res) => {
         }
     } catch (error) {
         res.status(500).json({ status: true, message: "Internal Server Error" })
-    }
-}
-
-exports.register_test = async (req, res) => {
-    try {
-        const { id, name, mobile, email, password } = req.body;
-        if (!name) return res.status(400).json({ status: false, message: "Username is required" });
-        if (!mobile) return res.status(400).json({ status: false, message: "Mobile number is required" });
-        if (!email) return res.status(400).json({ status: false, message: "Email is required" });
-        if (!password) return res.status(400).json({ status: false, message: "Password is required" });
-        db.query(`SELECT * FROM register_user WHERE email = '${email}'`, (error, result) => {
-            if (error) {
-                return res.status(500).json({ status: false, message: `Database error 1: ${error}` });
-            }
-            if (result.length > 0) {
-                const user = result[0];
-
-                // Check if user is already registered and verified
-                if (user.flag) {
-                    return res.status(400).json({ status: false, message: "User already registered and verified" });
-                }
-                // User exists but is not verified, update the OTP
-                const salt = bcrypt.genSaltSync(10);
-                const hashedPassword = bcrypt.hashSync(password, salt);
-
-                var secret = speakeasy.generateSecret().base32;
-                console.log(secret, "secret")
-                var otp = speakeasy.totp({
-                    secret: secret,
-                    encoding: 'base32'
-                });
-                console.log(otp, "otp")
-
-
-                db.query(`UPDATE register_user SET otp = '${otp}', secret = '${secret}', password = '${hashedPassword}' WHERE email = '${email}'`, (updateError) => {
-                    if (updateError) {
-                        return res.status(500).json({ status: false, message: `Database error 2: ${updateError}` });
-                    }
-
-                    // Send updated OTP to the user's email
-                    sendOtpToEmail(email, otp);
-
-                    return res.status(200).json({ status: true, message: "OTP updated. Please verify your email." });
-                });
-            } else {
-                // New user, generate OTP and insert into database
-                var secret = speakeasy.generateSecret().base32;
-                var otp = speakeasy.totp({
-                    secret: secret,
-                    encoding: 'base32'
-                });
-                const salt = bcrypt.genSaltSync(10);
-                const hashedPassword = bcrypt.hashSync(password, salt);
-
-                db.query(
-                    "INSERT INTO register_user (name, mobile, email, secret, password, otp) VALUES (?, ?, ?, ?, ?, ?)",
-                    [name, mobile, email, secret, hashedPassword, otp],
-                    (insertError) => {
-                        if (insertError) {
-                            return res.status(500).json({ status: false, message: `Database error 3: ${insertError}` });
-                        }
-
-                        // Send OTP to the user's email
-                        sendOtpToEmail(email, otp);
-
-                        return res.status(200).json({ status: true, message: "User registered. Please verify your email." });
-                    }
-                );
-            }
-        });
-    } catch (error) {
-        res.status(500).json({ status: false, message: `Internal Server Error 4: ${error}` });
     }
 }
 
