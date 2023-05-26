@@ -164,9 +164,7 @@ exports.register = async (req, res) => {
                 // User exists but is not verified, update the OTP
                 const salt = bcrypt.genSaltSync(10);
                 const hashedPassword = bcrypt.hashSync(password, salt);
-
                 var secret = speakeasy.generateSecret().base32;
-                console.log(secret, "secret")
                 var otp = speakeasy.totp({
                     secret: secret,
                     encoding: 'base32'
@@ -206,10 +204,36 @@ exports.register = async (req, res) => {
     }
 }
 
+/// this is send email function for register
+async function sendOtpToEmail(email, otp) {
+    try {
+        const transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 587,
+            secure: false, // true for 465, false for other ports
+            auth: {
+                user: "leadchainsaurabh7@gmail.com",
+                pass: "szjfpgixdiaqhema",
+            },
+        });
+
+        const info = await transporter.sendMail({
+            from: '"Patiram Production 👻" <leadchainsaurabh7@gmail.com>',
+            to: email,
+            subject: "Patiram.in ✔",
+            text: `Hello user, your OTP is ${otp}`,
+            html: `<b>This is your OTP: ${otp}</b>`,
+        });
+
+        console.log("Email sent:", info.response);
+    } catch (error) {
+        console.error("Error sending email:", error);
+    }
+}
+
 //verify otp api
 exports.verify_otp = async (req, res) => {
     const params = req.body
-    console.log(params, "params")
     if (params.email) {
         if (params.otp) {
             try {
@@ -229,7 +253,7 @@ exports.verify_otp = async (req, res) => {
                                     res.status(404).json({ status: false, message: `Token not found ${error}` })
                                 } else {
                                     const token = jwt.sign({ email: params.email }, 'secretKey');
-                                    res.status(200).json({ status: true, message: `Varification Sucessfully`,token: token })
+                                    res.status(200).json({ status: true, message: `Varification Sucessfully`, token: token })
                                 }
                             })
                         } else {
@@ -279,7 +303,22 @@ exports.login_user = async (req, res) => {
 // add teacher management  api 
 exports.add_teacher_management = async (req, res) => {
     try {
-        const { teacher_name, age, email_teacher, address_teacher, username_teacher, password, confirm_password, school_id, eligibility, no_of_degree, experience, position } = req.body;
+        const {
+            teacher_name,
+            age,
+            email_teacher,
+            address_teacher,
+            username_teacher,
+            salary,
+            password,
+            confirm_password,
+            school_id,
+            eligibility,
+            no_of_degree,
+            experience,
+            joining_date,
+            position
+        } = req.body;
         if (teacher_name) {
             if (age) {
                 if (email_teacher) {
@@ -287,44 +326,100 @@ exports.add_teacher_management = async (req, res) => {
                         if (username_teacher) {
                             if (password) {
                                 if (password === confirm_password) {
-                                    db.query(`select * from addteachermanagement where teacher_name = '${teacher_name}'and  email_teacher = '${email_teacher}'`, (error, result) => {
-                                        if (error) {
-                                            res.status(409).json({ status: true, message: "Duplicate Record Can't Accept" })
-                                        } else if (result.length > 0) {
-                                            res.status(422).json({ status: true, message: "Already Exist" })
-                                        } else {
-                                            db.query(`insert into addteachermanagement set ?`, { teacher_name, age, email_teacher, address_teacher, username_teacher, password, school_id, eligibility, no_of_degree, experience, position }, (error, result) => {
-                                                if (error) {
-                                                    res.status(200).json({ status: true, message: "Incorrect Details" })
-                                                } else {
-                                                    res.status(200).json({ status: true, res: result })
-                                                }
-                                            })
+                                    db.query(
+                                        `SELECT * FROM addteachermanagement WHERE teacher_name = '${teacher_name}' AND email_teacher = '${email_teacher}'`, (error, result) => {
+                                            if (error) {
+                                                res.status(409).json({ status: true, message: "Duplicate Record Can't Accept" });
+                                            } else if (result.length > 0) {
+                                                res.status(422).json({ status: true, message: "Already Exist" });
+                                            } else {
+                                                const saltRounds = 10;
+                                                bcrypt.hash(password, saltRounds, (error, hashedPassword) => {
+                                                    if (error) {
+                                                        res.status(500).json({ status: true, message: "Internal Server Error" });
+                                                    } else {
+                                                        var school_id = speakeasy.totp({
+                                                            // secret: secret,
+                                                            encoding: 'base32'
+                                                        });
+                                                        db.query(`INSERT INTO addteachermanagement SET ?`, {
+                                                            teacher_name,
+                                                            age,
+                                                            email_teacher,
+                                                            address_teacher,
+                                                            username_teacher,
+                                                            salary,
+                                                            password: hashedPassword, // Store the hashed password
+                                                            confirm_password,
+                                                            school_id,
+                                                            eligibility,
+                                                            no_of_degree,
+                                                            experience,
+                                                            position
+                                                        }, (error, result) => {
+                                                            if (error) {
+                                                                res.status(200).json({ status: true, message: "Incorrect Details" });
+                                                            } else {
+                                                                sendPasswordToEmail(email_teacher, school_id,teacher_name); 
+                                                                res.status(200).json({ status: true, res: result });
+                                                            }
+                                                        }
+                                                        );
+                                                    }
+                                                });
+                                            }
                                         }
-                                    })
+                                    );
                                 } else {
-                                    res.status(400).json({ status: true, message: "password Mismatch" })
+                                    res.status(400).json({ status: true, message: "Password Mismatch" });
                                 }
                             } else {
-                                res.status(200).json({ status: true, message: "Password Required" })
+                                res.status(200).json({ status: true, message: "Password Required" });
                             }
                         } else {
-                            res.status(200).json({ status: true, message: "Username Required" })
+                            res.status(200).json({ status: true, message: "Username Required" });
                         }
                     } else {
-                        res.status(200).json({ status: true, message: "Address Required" })
+                        res.status(200).json({ status: true, message: "Address Required" });
                     }
                 } else {
-                    res.status(200).json({ status: true, message: "Email Required" })
+                    res.status(200).json({ status: true, message: "Email Required" });
                 }
             } else {
-                res.status(200).json({ status: true, message: "age Required" })
+                res.status(200).json({ status: true, message: "Age Required" });
             }
         } else {
-            res.status(200).json({ status: 200, message: "Teacher Name Required" })
+            res.status(200).json({ status: 200, message: "Teacher Name Required" });
         }
     } catch (error) {
-        res.status(500).json({ status: true, message: "Internal Server Error" })
+        res.status(500).json({ status: true, message: "Internal Server Error" });
+    }
+};
+
+/// this is send email function for add_teacher_management
+async function sendPasswordToEmail(email_teacher, school_id,teacher_name) {
+    try {
+        const transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 587,
+            secure: false, // true for 465, false for other ports
+            auth: {
+                user: "leadchainsaurabh7@gmail.com",
+                pass: "szjfpgixdiaqhema",
+            },
+        });
+
+        const info = await transporter.sendMail({
+            from: '"Patiram Production Registration 👻" <leadchainsaurabh7@gmail.com>',
+            to: email_teacher,
+            subject: "Management Verification",
+            text: `Hello user, your OTP is ${school_id}`,
+            html: `<b>Dear ${teacher_name} ,You have successfully registered with our Organization and we are <br>so glad to join you with us. And  ${school_id} is your teacher id: keep this for future use.</b>`,
+        });
+
+        console.log("Email sent:", info.response);
+    } catch (error) {
+        console.error("Error sending email:", error);
     }
 }
 
@@ -342,28 +437,11 @@ exports.delete_add_teacher_management = async (req, res) => {
     }
 }
 
-async function sendOtpToEmail(email, otp) {
-    try {
-        const transporter = nodemailer.createTransport({
-            host: "smtp.gmail.com",
-            port: 587,
-            secure: false, // true for 465, false for other ports
-            auth: {
-                user: "leadchainsaurabh7@gmail.com",
-                pass: "szjfpgixdiaqhema",
-            },
-        });
 
-        const info = await transporter.sendMail({
-            from: '"Patiram Production 👻" <leadchainsaurabh7@gmail.com>',
-            to: email,
-            subject: "Patiram.in ✔",
-            text: `Hello user, your OTP is ${otp}`,
-            html: `<b>This is your OTP: ${otp}</b>`,
-        });
 
-        console.log("Email sent:", info.response);
-    } catch (error) {
-        console.error("Error sending email:", error);
-    }
-}
+
+
+
+// testing api//
+
+
