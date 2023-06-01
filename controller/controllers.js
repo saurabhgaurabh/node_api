@@ -377,7 +377,8 @@ exports.add_product = async (req, res) => {
 
 exports.track_teacher_management = async (req, res) => {
     try {
-        const { teacher_name,
+        const {
+            teacher_name,
             email,
             mobile,
             previous_organization,
@@ -448,7 +449,6 @@ exports.track_teacher_management = async (req, res) => {
             return;
         }
 
-
         const base64Data = img_highschool.split(';base64,').pop(); // Extract base64 data
         const imageType = img_highschool.match(/^data:image\/(.*);base64,/)[1]; // Extract image type
 
@@ -490,7 +490,6 @@ exports.track_teacher_management = async (req, res) => {
     }
 };
 
-
 // get product api
 exports.get_product = async (req, res) => {
     try {
@@ -523,12 +522,12 @@ exports.update_product = async (req, res) => {
                         db.query(`select product_name from product where id = '${id}' `, (error, result) => {
                             if (error) {
                                 console.log(error);
-                                res.status(200).json({ status: false, message: "Product not found" });
+                                res.status(409).json({ status: false, message: "Duplicate Product" });
                             } else {
                                 db.query(`update product set product_name= '${product_name}', product_type= '${product_type}', discription= '${discription}' where id = '${id}'`, (error, result) => {
                                     if (error) {
                                         console.log(error);
-                                        res.status(200).json({ status: false, message: "Product are not updated333" });
+                                        res.status(404).json({ status: false, message: "Product are not updated333" });
                                     } else {
                                         res.status(200).json({ status: true, message: "Updated Successfully", res: result });
                                     }
@@ -565,35 +564,39 @@ exports.update_add_teacher_management = async (req, res) => {
         const { id, teacher_name, age, email_teacher, address_teacher, username_teacher, salary, password, confirm_password, school_id, eligibility, no_of_degree, experience, joining_date, position } = req.body;
 
         if (!id) {
-            res.status(200).json({ status: false, message: "Product ID is required." });
+            res.status(404).json({ status: false, message: "Product ID is required." });
             return;
         }
 
         if (!teacher_name) {
-            res.status(200).json({ status: false, message: "Teacher name is required." });
+            res.status(404).json({ status: false, message: "Teacher name is required." });
             return;
         }
 
         if (!age) {
-            res.status(200).json({ status: false, message: "Age is required." });
+            res.status(404).json({ status: false, message: "Age is required." });
             return;
         }
 
         if (!email_teacher) {
-            res.status(200).json({ status: false, message: "Email is required." });
+            res.status(404).json({ status: false, message: "Email is required." });
             return;
         }
 
         if (!address_teacher) {
-            res.status(200).json({ status: false, message: "Address is required." });
+            res.status(404).json({ status: false, message: "Address is required." });
         }
 
         if (!username_teacher) {
-            res.status(200).json({ status: false, message: "Username is required." });
+            res.status(404).json({ status: false, message: "Username is required." });
         }
 
         if (!password & password === confirm_password) {
-            res.status(200).json({ status: false, message: "Password is required" })
+            res.status(404).json({ status: false, message: "Password is required" });
+        }
+
+        if (!experience) {
+            res.status(404).jsom({ status: false, message: "experience is reqiured" });
         }
 
         db.query(`SELECT teacher_name FROM addteachermanagement WHERE id = '${id}'`, (error, result) => {
@@ -608,7 +611,8 @@ exports.update_add_teacher_management = async (req, res) => {
                 age = '${age}', 
                 email_teacher = '${email_teacher}',
                 address_teacher = '${address_teacher}',
-                username_teacher = '${username_teacher}'
+                username_teacher = '${username_teacher}',
+                experience = '${experience}'
                 WHERE id = '${id}'`, (error, result) => {
                     if (error) {
                         res.status(500).json({ status: false, message: "Failed to update the product. Please try again." });
@@ -624,6 +628,79 @@ exports.update_add_teacher_management = async (req, res) => {
         res.status(500).json({ status: false, message: "Internal Server Error" });
     }
 };
+
+// update_track_teacher_management api
+exports.update_track_teacher_management = async (req, res) => {
+    try {
+        const {
+            trackID,
+            teacher_name,
+            email,
+            mobile,
+            previous_organization,
+            experience,
+            qualification,
+            no_of_degree,
+            permanent_residence,
+            current_residence,
+            previous_position,
+            current_position,
+            img_highschool,
+            adhar_card,
+            pan_Card,
+            teacher_img,
+        } = req.body;
+
+        if (!trackID) return res.status(409).json({ status: false, messaage: "reacher name is required" });
+        if (!teacher_name) return res.status(409).json({ status: false, messaage: "reacher name is required" });
+        // if (!email) return res.status(409).json({ status: false, message: "email is required" });
+        // if (!mobile) return res.status(409).json({ status: false, message: "mobile is required" });
+        // if (!previous_organization) return res.status(409).json({ status: false, message: "previous organization is required" });
+        // if (!experience) return res.status(409).json({ status: false, message: "experience is required" });
+        // if (!qualification) return res.status(409).json({ status: false, message: "qualification is required" });
+        // if (!no_of_degree) return res.status(409).json({ status: false, message: "no of degree is required" });
+        // if (!permanent_residence) return res.status(409).json({ status: false, message: "permanent residence is required" });
+        // if (!current_residence) return res.status(409).json({ status: false, message: "current residence is required" });
+        // if (!previous_position) return res.status(409).json({ status: false, message: "previous position is required" });
+        // if (!current_position) return res.status(409).json({ status: false, message: "current position is required" });
+        // if (!current_position) return res.status(409).json({ status: false, message: "current position is required" });
+
+        // Check if the track teacher exists
+        db.query(`SELECT teacher_name FROM track_teacher WHERE trackID = '${trackID}'`, (error, result) => {
+            if (error) {
+                res.status(500).json({ status: false, message: "Failed to fetch data. Please try again." });
+                return;
+            }
+
+            if (result.length > 0) {
+                db.query(`UPDATE track_teacher SET 
+                teacher_name = '${teacher_name}',
+                email = '${email}',
+                mobile = '${mobile}',
+                previous_organization = '${previous_organization}',
+                experience = '${experience}',
+                qualification = '${qualification}',
+                no_of_degree = '${no_of_degree}',
+                permanent_residence = '${permanent_residence}',
+                current_residence = '${current_residence}',
+                previous_position = '${previous_position}',
+                current_position = '${current_position}'
+                WHERE trackID = '${trackID}'`, (error, result) => {
+                    if (error) {
+                        res.status(500).json({ status: false, message: "Failed to update the product. Please try again." });
+                        return;
+                    }
+                    res.status(200).json({ status: true, message: "Product updated successfully.", res: result });
+                });
+            } else {
+                res.status(200).json({ status: false, message: "Product not found." });
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ status: false, message: `Internal server error: ${error}` });
+    }
+};
+
 
 // delete product api 
 exports.delete_product = async (req, res) => {
