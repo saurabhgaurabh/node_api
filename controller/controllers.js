@@ -62,13 +62,12 @@ exports.get_product = async (req, res) => {
 }
 
 // update product api
-exports.update_produuct = async (req, res) => {
+exports.update_product = async (req, res) => {
     try {
         const product_name = req.body.product_name;
         const product_type = req.body.product_type;
         const discription = req.body.discription;
         const id = req.body.id;
-        console.log(product_type, "product_type");
         if (id) {
             if (product_name) {
                 if (product_type) {
@@ -78,7 +77,7 @@ exports.update_produuct = async (req, res) => {
                                 console.log(error);
                                 res.status(200).json({ status: false, message: "Product not found" });
                             } else {
-                                db.query(`update product set product_name=' ${product_name}', product_type= '${product_type}', discription= '${discription}' where id = '${id}'`, (error, result) => {
+                                db.query(`update product set product_name= '${product_name}', product_type= '${product_type}', discription= '${discription}' where id = '${id}'`, (error, result) => {
                                     if (error) {
                                         console.log(error);
                                         res.status(200).json({ status: false, message: "Product are not updated333" });
@@ -111,6 +110,104 @@ exports.update_produuct = async (req, res) => {
     }
 }
 
+// update add teacher management api
+// exports.update_add_teacher_management = async (req, res) => {
+//     try {
+//         const teacher_name = req.body.teacher_name;
+//         const age = req.body.age;
+//         const email_teacher = req.body.email_teacher;
+//         const id = req.body.id;
+//         if (id) {
+//             if (teacher_name) {
+//                 if (age) {
+//                     if (email_teacher) {
+//                         db.query(`select teacher_name from addteachermanagement where id = '${id}' `, (error, result) => {
+//                             if (error) {
+//                                 res.status(200).json({ status: false, message: "Product not found" });
+//                             } else {
+//                                 db.query(`update addteachermanagement set teacher_name = '${teacher_name}', age= '${age}', email_teacher= '${email_teacher}' where id = '${id}'`, (error, result) => {
+//                                     if (error) {
+//                                         res.status(200).json({ status: false, message: "Product are not updated333" });
+//                                     } else {
+//                                         res.status(200).json({ status: true, message: "Updated Successfully", res: result });
+//                                     }
+//                                 });
+//                             };
+//                         });
+
+//                     } else {
+//                         res.status(200).json({ status: false, message: "Email Required" });
+//                     }
+//                 } else {
+//                     res.status(200).json({ status: false, message: "Age Required" });
+//                 }
+
+//             } else {
+//                 res.status(200).json({ status: false, message: "teacher Name Required" });
+//             }
+//         } else {
+//             res.status(200).json({ status: false, message: "Product id Required" });
+//         }
+//     } catch (error) {
+//         res.status(200).json({ status: false, message: "Product Not Updated" });
+
+//     }
+
+// }
+
+exports.update_add_teacher_management = async (req, res) => {
+    try {
+        // const teacher_name = req.body.teacher_name;
+        // const age = req.body.age;
+        // const email_teacher = req.body.email_teacher;
+        // const id = req.body.id;
+
+        const { teacher_name, age, email_teacher, id } = req.body;
+
+        if (!id) {
+            res.status(200).json({ status: false, message: "Product ID is required." });
+            return;
+        }
+
+        if (!teacher_name) {
+            res.status(200).json({ status: false, message: "Teacher name is required." });
+            return;
+        }
+
+        if (!age) {
+            res.status(200).json({ status: false, message: "Age is required." });
+            return;
+        }
+
+        if (!email_teacher) {
+            res.status(200).json({ status: false, message: "Email is required." });
+            return;
+        }
+
+        db.query(`SELECT teacher_name FROM addteachermanagement WHERE id = '${id}'`, (error, result) => {
+            if (error) {
+                res.status(500).json({ status: false, message: "Failed to fetch data. Please try again." });
+                return;
+            }
+
+            if (result.length > 0) {
+                db.query(`UPDATE addteachermanagement SET teacher_name = '${teacher_name}', age = '${age}', email_teacher = '${email_teacher}' WHERE id = '${id}'`, (error, result) => {
+                    if (error) {
+                        res.status(500).json({ status: false, message: "Failed to update the product. Please try again." });
+                        return;
+                    }
+                    res.status(200).json({ status: true, message: "Product updated successfully.", res: result });
+                });
+            } else {
+                res.status(200).json({ status: false, message: "Product not found." });
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ status: false, message: "Internal Server Error" });
+    }
+};
+
+
 // delete product api 
 exports.delete_product = async (req, res) => {
     const id = req.body.id;
@@ -125,7 +222,7 @@ exports.delete_product = async (req, res) => {
                             if (error) {
                                 res.status(200).json({ status: false, message: "Product can't delete" });
                             } else {
-                                res.status(200).json({ status: true, message: "Deleted Successfullt" });
+                                res.status(200).json({ status: true, message: "Deleted Successfully" });
                             }
                         });
                     } else {
@@ -133,7 +230,6 @@ exports.delete_product = async (req, res) => {
                     }
                 }
             });
-
         } else {
             res.status(200).json({ status: false, message: "Can not delete" });
         }
@@ -339,7 +435,6 @@ exports.add_teacher_management = async (req, res) => {
                                                         res.status(500).json({ status: true, message: "Internal Server Error" });
                                                     } else {
                                                         var school_id = speakeasy.totp({
-                                                            // secret: secret,
                                                             encoding: 'base32'
                                                         });
                                                         db.query(`INSERT INTO addteachermanagement SET ?`, {
@@ -360,7 +455,7 @@ exports.add_teacher_management = async (req, res) => {
                                                             if (error) {
                                                                 res.status(200).json({ status: true, message: "Incorrect Details" });
                                                             } else {
-                                                                sendPasswordToEmail(email_teacher, school_id,teacher_name); 
+                                                                sendPasswordToEmail(email_teacher, school_id, teacher_name);
                                                                 res.status(200).json({ status: true, res: result });
                                                             }
                                                         }
@@ -397,7 +492,7 @@ exports.add_teacher_management = async (req, res) => {
 };
 
 /// this is send email function for add_teacher_management
-async function sendPasswordToEmail(email_teacher, school_id,teacher_name) {
+async function sendPasswordToEmail(email_teacher, school_id, teacher_name) {
     try {
         const transporter = nodemailer.createTransport({
             host: "smtp.gmail.com",
@@ -427,21 +522,39 @@ async function sendPasswordToEmail(email_teacher, school_id,teacher_name) {
 exports.delete_add_teacher_management = async (req, res) => {
     const id = req.body.id;
     try {
-        if (id) {
-            db.query(`select * from addteachermanagement `)
-        } else {
-            res.status(200).json({ status: true, message: "can not delete" })
+        if (!id) {
+            res.status(200).json({ status: false, message: "ID is required. Cannot delete." });
+            return;
         }
+
+        db.query(`SELECT id FROM addteachermanagement WHERE id = '${id}'`, (error, result) => {
+            if (error) {
+                res.status(500).json({ status: false, message: "Failed to fetch data. Please try again." });
+                return;
+            }
+
+            if (result.length > 0) {
+                db.query(`DELETE FROM addteachermanagement WHERE id = '${id}'`, (error, result) => {
+                    if (error) {
+                        res.status(500).json({ status: false, message: "Failed to delete the item. Please try again." });
+                        return;
+                    }
+                    res.status(200).json({ status: true, message: "Item deleted successfully." });
+                });
+            } else {
+                res.status(200).json({ status: false, message: "The item does not exist." });
+            }
+        });
     } catch (error) {
-        res.status(500).json({ status: true, message: "Internal Server Error" })
+        res.status(500).json({ status: false, message: "Internal Server Error" });
     }
-}
+};
 
 
 
 
 
 
-// testing api//
+
 
 
