@@ -14,6 +14,7 @@ router.post('/verify_otp', controller.verify_otp)
 router.post('/add_product', controller.add_product);
 router.post('/add_teacher_management', controller.add_teacher_management);
 router.post('/track_teacher_management',controller.track_teacher_management);
+router.post('/salary_management',controller.salary_management);
 
 // all get api 
 router.get('/get_product', controller.get_product);
@@ -26,6 +27,7 @@ router.post('/update_track_teacher_management',controller.update_track_teacher_m
 // all delete api
 router.post('/delete_product', controller.delete_product);
 router.post('/delete_add_teacher_management', controller.delete_add_teacher_management);
+router.post('/delete_track_teacher_management',controller.delete_track_teacher_management);
 
 
 

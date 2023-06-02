@@ -4,56 +4,18 @@ const otpGenerator = require('otp-generator');
 const bcrypt = require('bcrypt')
 const speakeasy = require('speakeasy')
 const jwt = require('jsonwebtoken');
+const SECRET_KEY = 'N84itri-HUb*t9@phId$'
+
 
 
 
 //login user api
-// exports.login_user = async (req, res) => {
-//     try {
-//         const { email, password } = req.body;
-
-//         if (email) {
-//             if (password) {
-//                 db.query(`insert into register_user set ?`, { email, password }, (error, result) => {
-//                     if (error) {
-//                         res.status(200).json({ status: true, message: "incorrect" })
-//                     } else {
-//                         var tokenValidates = speakeasy.totp.verify({
-//                             secret: result[0].secret,
-//                             encoding: 'base32',
-//                             token: params.otp,
-//                             window: 600,
-//                         });
-//                         if (tokenValidates) {
-//                             const token = jwt.sign({ email: email },);
-//                             res.status(200).json({ status: true, message: "Login Successfully", res: result, token: token })
-//                         }
-//                     }
-//                 })
-//             } else {
-//                 res.status(200).json({ status: true, message: "Password Required" })
-//             }
-//         } else {
-//             res.status(200).json({ status: true, message: "Email Required" })
-//         }
-//     } catch (error) {
-//         res.status(200).json({ status: true, message: "Error" })
-//     }
-// }
-
 exports.login_user = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        if (!email) {
-            res.status(400).json({ status: false, message: "Email is required." });
-            return;
-        }
-
-        if (!password) {
-            res.status(400).json({ status: false, message: "Password is required." });
-            return;
-        }
+        if (!email) return res.status(400).json({ status: false, message: "Email is required." });
+        if (!password) return res.status(400).json({ status: false, message: "Password is required." });
 
         db.query(`SELECT * FROM register_user WHERE email = '${email}'`, (error, result) => {
             if (error) {
@@ -61,10 +23,7 @@ exports.login_user = async (req, res) => {
                 return;
             }
 
-            if (result.length === 0) {
-                res.status(200).json({ status: false, message: "Incorrect email or password." });
-                return;
-            }
+            if (result.length === 0) return res.status(200).json({ status: false, message: "Incorrect email or password." });
 
             const hashedPassword = result[0].password;
             bcrypt.compare(password, hashedPassword, (error, passwordMatch) => {
@@ -77,8 +36,7 @@ exports.login_user = async (req, res) => {
                     res.status(200).json({ status: false, message: "Incorrect email or password." });
                     return;
                 }
-
-                const token = jwt.sign({ email: email }, 'your_secret_key_here', { expiresIn: '1h' });
+                const token = jwt.sign({ email: email }, SECRET_KEY, { expiresIn: '1h' });
                 res.status(200).json({ status: true, message: "Login successful.", token: token });
             });
         });
@@ -375,6 +333,7 @@ exports.add_product = async (req, res) => {
     }
 }
 
+// track teacher management api
 exports.track_teacher_management = async (req, res) => {
     try {
         const {
@@ -486,9 +445,42 @@ exports.track_teacher_management = async (req, res) => {
             }
         });
     } catch (error) {
-        res.status(500).json({ status: false, messaage: "Internal server error" })
+        res.status(500).json({ status: false, messaage: `Internal server error '${error}'` })
     }
 };
+
+// salary api
+exports.salary_management = async (req, res) => {
+    try {
+        const { teacher_name, month, salary, position, performance, attendance } = req.body;
+        if (!teacher_name) return res.status(404).json({ status: false, message: "teacher name is required" });
+        if (!month) return res.status(404).json({ status: false, message: "month is required" });
+        if (!salary) return res.status(404).json({ status: false, message: "salary is required" });
+        if (!position) return res.status(404).json({ status: false, message: "position is required" });
+        if (!performance) return res.status(404).json({ status: false, message: "performance is required" });
+        if (!attendance) return res.status(404).json({ status: false, message: "attendance is required" });
+
+        const salaryData = { teacher_name, month, salary, position, performance, attendance };
+
+        db.query(`select * from salary where teacher_name = '${teacher_name}'`, (error, result) => {
+            if (error) {
+                res.status(500).json({ status: false, message: "Failed to fetch data, Please try again" });
+            } else if (result.length > 0) {
+                res.status(409).json({ status: true, message: "Item already exist!" });
+            } else {
+                db.query(`insert into salary set ?`, salaryData, (error, result) => {
+                    if (error) {
+                        res.status(500).json({ status: false, message: `Failed to insert item. Please try again. '${error}'` })
+                    } else {
+                        res.status(200).json({ status: true, message: "Inserted Successfully", res: result });
+                    }
+                });
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ status: false, messaage: `Internal server error '${error}'` })
+    }
+}
 
 // get product api
 exports.get_product = async (req, res) => {
@@ -653,17 +645,17 @@ exports.update_track_teacher_management = async (req, res) => {
 
         if (!trackID) return res.status(409).json({ status: false, messaage: "reacher name is required" });
         if (!teacher_name) return res.status(409).json({ status: false, messaage: "reacher name is required" });
-        // if (!email) return res.status(409).json({ status: false, message: "email is required" });
-        // if (!mobile) return res.status(409).json({ status: false, message: "mobile is required" });
-        // if (!previous_organization) return res.status(409).json({ status: false, message: "previous organization is required" });
-        // if (!experience) return res.status(409).json({ status: false, message: "experience is required" });
-        // if (!qualification) return res.status(409).json({ status: false, message: "qualification is required" });
-        // if (!no_of_degree) return res.status(409).json({ status: false, message: "no of degree is required" });
-        // if (!permanent_residence) return res.status(409).json({ status: false, message: "permanent residence is required" });
-        // if (!current_residence) return res.status(409).json({ status: false, message: "current residence is required" });
-        // if (!previous_position) return res.status(409).json({ status: false, message: "previous position is required" });
-        // if (!current_position) return res.status(409).json({ status: false, message: "current position is required" });
-        // if (!current_position) return res.status(409).json({ status: false, message: "current position is required" });
+        if (!email) return res.status(409).json({ status: false, message: "email is required" });
+        if (!mobile) return res.status(409).json({ status: false, message: "mobile is required" });
+        if (!previous_organization) return res.status(409).json({ status: false, message: "previous organization is required" });
+        if (!experience) return res.status(409).json({ status: false, message: "experience is required" });
+        if (!qualification) return res.status(409).json({ status: false, message: "qualification is required" });
+        if (!no_of_degree) return res.status(409).json({ status: false, message: "no of degree is required" });
+        if (!permanent_residence) return res.status(409).json({ status: false, message: "permanent residence is required" });
+        if (!current_residence) return res.status(409).json({ status: false, message: "current residence is required" });
+        if (!previous_position) return res.status(409).json({ status: false, message: "previous position is required" });
+        if (!current_position) return res.status(409).json({ status: false, message: "current position is required" });
+        if (!current_position) return res.status(409).json({ status: false, message: "current position is required" });
 
         // Check if the track teacher exists
         db.query(`SELECT teacher_name FROM track_teacher WHERE trackID = '${trackID}'`, (error, result) => {
@@ -693,7 +685,7 @@ exports.update_track_teacher_management = async (req, res) => {
                     res.status(200).json({ status: true, message: "Product updated successfully.", res: result });
                 });
             } else {
-                res.status(200).json({ status: false, message: "Product not found." });
+                res.status(200).json({ status: false, message: "Item not found." });
             }
         });
     } catch (error) {
@@ -764,6 +756,39 @@ exports.delete_add_teacher_management = async (req, res) => {
         res.status(500).json({ status: false, message: "Internal Server Error" });
     }
 };
+
+// delete_track_teacher_management api
+exports.delete_track_teacher_management = async (req, res) => {
+    try {
+        const { trackID } = req.body;
+
+        if (!trackID) {
+            res.status(200).json({ status: true, message: "Id is required can not delete" });
+            return;
+        }
+
+        db.query(`select trackID from track_teacher where trackID = '${trackID}'`, (error, result) => {
+            if (error) {
+                res.status(500).json({ status: false, message: "Failed to fetch data, try again" });
+                return;
+            }
+            if (result.length > 0) {
+                db.query(`delete from track_teacher where trackID = '${trackID}'`, (error, result) => {
+                    if (error) {
+                        res.status(500).json({ status: false, message: "Failed to delete the item. Please try again." });
+                    } else {
+                        res.status(200).json({ status: true, message: "Item deleted Successfully" });
+                    }
+                });
+            } else {
+                res.status(200).json({ status: true, message: "Item does not exist" });
+            }
+        });
+
+    } catch (error) {
+        res.status(500).json({ status: false, message: `Internal server error '${error}'` })
+    }
+}
 
 
 
