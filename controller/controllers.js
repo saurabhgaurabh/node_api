@@ -408,8 +408,8 @@ exports.track_teacher_management = async (req, res) => {
             return;
         }
 
-        const base64Data = img_highschool.split(';base64,').pop(); // Extract base64 data
-        const imageType = img_highschool.match(/^data:image\/(.*);base64,/)[1]; // Extract image type
+        // const base64Data = img_highschool.split(';base64,').pop(); // Extract base64 data
+        // const imageType = img_highschool.match(/^data:image\/(.*);base64,/)[1]; // Extract image type
 
         const trackTeacherData = {
             teacher_name,
@@ -423,7 +423,7 @@ exports.track_teacher_management = async (req, res) => {
             current_residence,
             previous_position,
             current_position,
-            img_highschool: `${imageType};base64,${base64Data}`, // Set the image data with the correct format
+            // img_highschool: `${imageType};base64,${base64Data}`, // Set the image data with the correct format
             adhar_card,
             pan_Card,
             teacher_img,
@@ -719,7 +719,7 @@ exports.update_salary_management = async (req, res) => {
         // if (invalidFields.length > 0) {
         //     return res.status(400).json({ status: false, message: `Update not allowed for fields: ${invalidFields.join(', ')}` });
         // }
-        
+
         db.query(`select * from salary where salaryID = '${salaryID}'`, (error, result) => {
             if (error) return res.status(500).json({ staus: false, message: `Failed to fetch data. Please try again. '${error}'` });
             if (result.length > 0) {
@@ -737,7 +737,7 @@ exports.update_salary_management = async (req, res) => {
                         res.status(200).json({ status: true, message: "Item updated Successfully.", res: result })
                     }
                 });
-            }else{
+            } else {
                 res.status(500).json({ status: false, message: "Item not found." });
             }
         });
@@ -745,7 +745,6 @@ exports.update_salary_management = async (req, res) => {
         res.status(500).json({ status: false, message: `Internal server error. '${error}'` });
     }
 };
-
 
 // delete product api 
 exports.delete_product = async (req, res) => {
@@ -830,7 +829,7 @@ exports.delete_track_teacher_management = async (req, res) => {
                     if (error) {
                         res.status(500).json({ status: false, message: "Failed to delete the item. Please try again." });
                     } else {
-                        res.status(200).json({ status: true, message: "Item deleted Successfully" });
+                        res.status(200).json({ status: true, message: "Item deleted Successfully", res: result});
                     }
                 });
             } else {
@@ -842,6 +841,34 @@ exports.delete_track_teacher_management = async (req, res) => {
         res.status(500).json({ status: false, message: `Internal server error '${error}'` })
     }
 }
+
+// delete_salary_management api 
+exports.delete_salary_management = async (req, res) => {
+  try {
+    const { salaryID } = req.body;
+    if (!salaryID) return res.status(404).json({ status: false, message: "id is required." });
+
+    db.query(`SELECT salaryID FROM salary WHERE salaryID = '${salaryID}'`, (error, result) => {
+      if (error) {
+        res.status(500).json({ status: false, message: `Failed to fetch data. Please try again. '${error}'` });
+        return;
+      }
+      if (result.length > 0) {
+        db.query(`DELETE FROM salary WHERE salaryID = '${salaryID}'`, (error, result) => {
+          if (error) {
+            res.status(500).json({ status: false, message: `Failed to delete item. Please try again. '${error}'` });
+          } else {
+            res.status(200).json({ status: true, message: "Item deleted successfully.", res: result });
+          }
+        });
+      } else {
+        res.status(500).json({ status: false, message: "Item does not exist!" });
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ status: false, message: `Internal server error. '${error}'` });
+  }
+};
 
 
 

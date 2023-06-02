@@ -29,6 +29,7 @@ router.post('/update_salary_management', controller.update_salary_management);
 router.post('/delete_product', controller.delete_product);
 router.post('/delete_add_teacher_management', controller.delete_add_teacher_management);
 router.post('/delete_track_teacher_management',controller.delete_track_teacher_management);
+router.post('/delete_salary_management', controller.delete_salary_management);
 
 
 
