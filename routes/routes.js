@@ -22,7 +22,8 @@ router.get('/get_product', controller.get_product);
 // all update api
 router.post('/update_product', controller.update_product);
 router.post('/update_add_teacher_management', controller.update_add_teacher_management);
-router.post('/update_track_teacher_management',controller.update_track_teacher_management);
+router.post('/update_track_teacher_management', controller.update_track_teacher_management);
+router.post('/update_salary_management', controller.update_salary_management);
 
 // all delete api
 router.post('/delete_product', controller.delete_product);

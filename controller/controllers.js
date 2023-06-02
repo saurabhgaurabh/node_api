@@ -513,7 +513,6 @@ exports.update_product = async (req, res) => {
                     if (discription) {
                         db.query(`select product_name from product where id = '${id}' `, (error, result) => {
                             if (error) {
-                                console.log(error);
                                 res.status(409).json({ status: false, message: "Duplicate Product" });
                             } else {
                                 db.query(`update product set product_name= '${product_name}', product_type= '${product_type}', discription= '${discription}' where id = '${id}'`, (error, result) => {
@@ -679,17 +678,71 @@ exports.update_track_teacher_management = async (req, res) => {
                 current_position = '${current_position}'
                 WHERE trackID = '${trackID}'`, (error, result) => {
                     if (error) {
-                        res.status(500).json({ status: false, message: "Failed to update the product. Please try again." });
+                        res.status(500).json({ status: false, message: "Failed to update the Item. Please try again." });
                         return;
                     }
                     res.status(200).json({ status: true, message: "Product updated successfully.", res: result });
                 });
             } else {
-                res.status(200).json({ status: false, message: "Item not found." });
+                res.status(500).json({ status: false, message: "Item not found." });
             }
         });
     } catch (error) {
         res.status(500).json({ status: false, message: `Internal server error: ${error}` });
+    }
+};
+
+
+// update_salary_management api 
+exports.update_salary_management = async (req, res) => {
+    try {
+        const { salaryID, teacher_name, month, salary, position, performance, attendance } = req.body;
+
+        if (!salaryID) return res.status(404).json({ status: false, message: "salaryID is required" });
+        if (!teacher_name) return res.status(404).json({ status: false, message: "teacher name is required" });
+        if (!month) return res.status(404).json({ status: false, message: "month name is required" });
+        if (!salary) return res.status(404).json({ status: false, message: "salary is required" });
+        if (!position) return res.status(404).json({ status: false, message: "position is required" });
+        if (!performance) return res.status(404).json({ status: false, message: "performance is required" });
+        if (!attendance) return res.status(404).json({ status: false, message: "attendance is required" });
+
+        // Define the allowed fields in your API
+        const allowedFields = ['salaryID', 'teacher_name', 'month', 'salary', 'position', 'performance', 'attendance'];
+        // Check for unknown fields
+        const unknownFields = Object.keys(req.body).filter(field => !allowedFields.includes(field));
+        if (unknownFields.length > 0) {
+            return res.status(400).json({ status: false, message: `Unknown fields: ${unknownFields.join(', ')}` });
+        }
+        // Check if any of the fields are not allowed for update
+        // const disallowedFields = ['month', 'salary']; // Add the field names that are not allowed for update
+        // const invalidFields = Object.keys(req.body).filter(field => disallowedFields.includes(field));
+        // if (invalidFields.length > 0) {
+        //     return res.status(400).json({ status: false, message: `Update not allowed for fields: ${invalidFields.join(', ')}` });
+        // }
+        
+        db.query(`select * from salary where salaryID = '${salaryID}'`, (error, result) => {
+            if (error) return res.status(500).json({ staus: false, message: `Failed to fetch data. Please try again. '${error}'` });
+            if (result.length > 0) {
+                db.query(`update salary set
+                 teacher_name = '${teacher_name}',
+                 month = '${month}',
+                 salary = '${salary}',
+                 position = '${position}',
+                 performance = '${performance}',
+                 attendance = '${attendance}'
+                where salaryID = '${salaryID}'`, (error, result) => {
+                    if (error) {
+                        res.status(500).json({ status: false, message: "Failed to update the Item. Please try again." });
+                    } else {
+                        res.status(200).json({ status: true, message: "Item updated Successfully.", res: result })
+                    }
+                });
+            }else{
+                res.status(500).json({ status: false, message: "Item not found." });
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ status: false, message: `Internal server error. '${error}'` });
     }
 };
 
