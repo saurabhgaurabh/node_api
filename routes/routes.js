@@ -15,6 +15,7 @@ router.post('/add_product', controller.add_product);
 router.post('/add_teacher_management', controller.add_teacher_management);
 router.post('/track_teacher_management',controller.track_teacher_management);
 router.post('/salary_management',controller.salary_management);
+router.post('/teacher_joining_management', controller.teacher_joining_management);
 
 // all get api 
 router.get('/get_product', controller.get_product);

@@ -482,6 +482,54 @@ exports.salary_management = async (req, res) => {
     }
 }
 
+// add teacher_joining_management api
+exports.teacher_joining_management = async (req, res) => {
+    try {
+        const { teacher_name, email, address, mobile, joining_date, privious_salary, position, reference, communication_slills, experience_at_joiningtime, total_experience } = req.body;
+
+        if (!teacher_name) return res.status(404).json({ status: false, message: "teacher name is required." });
+        if (!email) return res.status(404).json({ status: false, message: "email is required." });
+        if (!address) return res.status(404).json({ status: false, message: "address is required." });
+        if (!mobile) return res.status(404).json({ status: false, message: "mobile is required." });
+        if(!joining_date) return res.status(404).json({ status: false, message: "joining date is required." });
+        if(!privious_salary) return res.status(404).json({ status: false, message: "privious salary is required." });
+        if(!position) return res.status(404).json({ status: false, message: "position is required." });
+        if(!reference) return res.status(404).json({ status: false, message: "reference is required." });
+        if(!experience_at_joiningtime) return res.status(404).json({ status: false, message: "experience at joiningtime is required." });
+        if(!total_experience) return res.status(404).json({ status: false, message: "total experience is required." });
+
+        // Define the allowed fields in your API
+        const allowedFields = ['teacher_name', 'email', 'address', 'mobile', 'joining_date', 'privious_salary', 'position', 'reference', 'communication_slills', 'experience_at_joiningtime', 'total_experience'];
+        // Check for unknown fields
+        const unknownFields = Object.keys(req.body).filter(field => !allowedFields.includes(field));
+        if (unknownFields.length > 0) {
+            return res.status(400).json({ status: false, message: `Unknown fields: ${unknownFields.join(', ')}` });
+        }
+
+        const joiningData = { teacher_name, email, address, mobile, joining_date, privious_salary, position, reference, communication_slills, experience_at_joiningtime, total_experience };
+
+        db.query(`select * from teacher_joining where teacher_name = '${teacher_name}'`, (error, result) => {
+            if (error) {
+                res.status(500).json({ status: false, message: "Failed to fetch data, Please try again." });
+            } else if (result.length > 0) {
+                res.status(409).json({ status: true, message: "Item already exist." });
+            } else {
+                db.query(`insert into teacher_joining set ?`, joiningData, (error, result) => {
+                    if (error) {
+                        res.status(500).json({ status: false, message: `Failed to insert data, Please try again. '${error}'` });
+                    } else {
+                        res.status(200).json({ status: true, message: "Inserted Successfully.", res: result });
+                    }
+
+                });
+            }
+        });
+
+    } catch (error) {
+        res.status(500).json({ status: false, messaage: `Internal server error. '${error}'` });
+    }
+}
+
 // get product api
 exports.get_product = async (req, res) => {
     try {
@@ -829,7 +877,7 @@ exports.delete_track_teacher_management = async (req, res) => {
                     if (error) {
                         res.status(500).json({ status: false, message: "Failed to delete the item. Please try again." });
                     } else {
-                        res.status(200).json({ status: true, message: "Item deleted Successfully", res: result});
+                        res.status(200).json({ status: true, message: "Item deleted Successfully", res: result });
                     }
                 });
             } else {
@@ -844,32 +892,31 @@ exports.delete_track_teacher_management = async (req, res) => {
 
 // delete_salary_management api 
 exports.delete_salary_management = async (req, res) => {
-  try {
-    const { salaryID } = req.body;
-    if (!salaryID) return res.status(404).json({ status: false, message: "id is required." });
+    try {
+        const { salaryID } = req.body;
+        if (!salaryID) return res.status(404).json({ status: false, message: "id is required." });
 
-    db.query(`SELECT salaryID FROM salary WHERE salaryID = '${salaryID}'`, (error, result) => {
-      if (error) {
-        res.status(500).json({ status: false, message: `Failed to fetch data. Please try again. '${error}'` });
-        return;
-      }
-      if (result.length > 0) {
-        db.query(`DELETE FROM salary WHERE salaryID = '${salaryID}'`, (error, result) => {
-          if (error) {
-            res.status(500).json({ status: false, message: `Failed to delete item. Please try again. '${error}'` });
-          } else {
-            res.status(200).json({ status: true, message: "Item deleted successfully.", res: result });
-          }
+        db.query(`SELECT salaryID FROM salary WHERE salaryID = '${salaryID}'`, (error, result) => {
+            if (error) {
+                res.status(500).json({ status: false, message: `Failed to fetch data. Please try again. '${error}'` });
+                return;
+            }
+            if (result.length > 0) {
+                db.query(`DELETE FROM salary WHERE salaryID = '${salaryID}'`, (error, result) => {
+                    if (error) {
+                        res.status(500).json({ status: false, message: `Failed to delete item. Please try again. '${error}'` });
+                    } else {
+                        res.status(200).json({ status: true, message: "Item deleted successfully.", res: result });
+                    }
+                });
+            } else {
+                res.status(500).json({ status: false, message: "Item does not exist!" });
+            }
         });
-      } else {
-        res.status(500).json({ status: false, message: "Item does not exist!" });
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ status: false, message: `Internal server error. '${error}'` });
-  }
+    } catch (error) {
+        res.status(500).json({ status: false, message: `Internal server error. '${error}'` });
+    }
 };
-
 
 
 
