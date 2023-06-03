@@ -353,6 +353,7 @@ exports.track_teacher_management = async (req, res) => {
             pan_Card,
             teacher_img,
         } = req.body;
+
         if (!teacher_name) {
             res.status(404).json({ status: false, message: "Teacher Name required." });
             return;
@@ -485,28 +486,27 @@ exports.salary_management = async (req, res) => {
 // add teacher_joining_management api
 exports.teacher_joining_management = async (req, res) => {
     try {
-        const { teacher_name, email, address, mobile, joining_date, privious_salary, position, reference, communication_slills, experience_at_joiningtime, total_experience } = req.body;
+        const { teacher_name, email, address, mobile, privious_salary, position, reference, communication_skills, experience_at_joiningtime, total_experience } = req.body;
 
         if (!teacher_name) return res.status(404).json({ status: false, message: "teacher name is required." });
         if (!email) return res.status(404).json({ status: false, message: "email is required." });
         if (!address) return res.status(404).json({ status: false, message: "address is required." });
         if (!mobile) return res.status(404).json({ status: false, message: "mobile is required." });
-        if(!joining_date) return res.status(404).json({ status: false, message: "joining date is required." });
-        if(!privious_salary) return res.status(404).json({ status: false, message: "privious salary is required." });
-        if(!position) return res.status(404).json({ status: false, message: "position is required." });
-        if(!reference) return res.status(404).json({ status: false, message: "reference is required." });
-        if(!experience_at_joiningtime) return res.status(404).json({ status: false, message: "experience at joiningtime is required." });
-        if(!total_experience) return res.status(404).json({ status: false, message: "total experience is required." });
+        if (!privious_salary) return res.status(404).json({ status: false, message: "privious salary is required." });
+        if (!position) return res.status(404).json({ status: false, message: "position is required." });
+        if (!reference) return res.status(404).json({ status: false, message: "reference is required." });
+        if (!experience_at_joiningtime) return res.status(404).json({ status: false, message: "experience at joiningtime is required." });
+        if (!total_experience) return res.status(404).json({ status: false, message: "total experience is required." });
 
         // Define the allowed fields in your API
-        const allowedFields = ['teacher_name', 'email', 'address', 'mobile', 'joining_date', 'privious_salary', 'position', 'reference', 'communication_slills', 'experience_at_joiningtime', 'total_experience'];
+        const allowedFields = ['teacher_name', 'email', 'address', 'mobile', 'joining_date', 'privious_salary', 'position', 'reference', 'communication_skills', 'experience_at_joiningtime', 'total_experience'];
         // Check for unknown fields
         const unknownFields = Object.keys(req.body).filter(field => !allowedFields.includes(field));
         if (unknownFields.length > 0) {
             return res.status(400).json({ status: false, message: `Unknown fields: ${unknownFields.join(', ')}` });
         }
 
-        const joiningData = { teacher_name, email, address, mobile, joining_date, privious_salary, position, reference, communication_slills, experience_at_joiningtime, total_experience };
+        const joiningData = { teacher_name, email, address, mobile, privious_salary, position, reference, communication_skills, experience_at_joiningtime, total_experience };
 
         db.query(`select * from teacher_joining where teacher_name = '${teacher_name}'`, (error, result) => {
             if (error) {
@@ -520,7 +520,6 @@ exports.teacher_joining_management = async (req, res) => {
                     } else {
                         res.status(200).json({ status: true, message: "Inserted Successfully.", res: result });
                     }
-
                 });
             }
         });
@@ -740,7 +739,6 @@ exports.update_track_teacher_management = async (req, res) => {
     }
 };
 
-
 // update_salary_management api 
 exports.update_salary_management = async (req, res) => {
     try {
@@ -762,11 +760,11 @@ exports.update_salary_management = async (req, res) => {
             return res.status(400).json({ status: false, message: `Unknown fields: ${unknownFields.join(', ')}` });
         }
         // Check if any of the fields are not allowed for update
-        // const disallowedFields = ['month', 'salary']; // Add the field names that are not allowed for update
-        // const invalidFields = Object.keys(req.body).filter(field => disallowedFields.includes(field));
-        // if (invalidFields.length > 0) {
-        //     return res.status(400).json({ status: false, message: `Update not allowed for fields: ${invalidFields.join(', ')}` });
-        // }
+        const disallowedFields = ['teacher_name', 'month', 'salary', 'position', 'performance', 'attendance']; // Add the field names that are not allowed for update
+        const invalidFields = Object.keys(req.body).filter(field => disallowedFields.includes(field));
+        if (invalidFields.length > 0) {
+            return res.status(400).json({ status: false, message: `Update not allowed for fields: ${invalidFields.join(', ')}` });
+        }
 
         db.query(`select * from salary where salaryID = '${salaryID}'`, (error, result) => {
             if (error) return res.status(500).json({ staus: false, message: `Failed to fetch data. Please try again. '${error}'` });
@@ -794,6 +792,61 @@ exports.update_salary_management = async (req, res) => {
     }
 };
 
+
+// update_teacher_joining_management api
+exports.update_teacher_joining_management = async = (req, res) => {
+    try {
+        const { joining_id, teacher_name, email, address, mobile, privious_salary, position, reference, communication_skills, experience_at_joiningtime, total_experience } = req.body;
+
+        if (!joining_id) res.status(404).json({ status: false, message: "Id is required, can not update." });
+        if (!teacher_name) res.status(404).json({ status: false, message: "teacher name is required, can not update." });
+        if (!email) res.status(404).json({ status: false, message: "email is required, can not update." });
+        if (!address) res.status(404).json({ status: false, message: "address is required, can not update." });
+        if (!mobile) res.status(404).json({ status: false, message: "mobile is required, can not update." });
+        if (!privious_salary) res.status(404).json({ status: false, message: "privious salary is required, can not update." });
+        if (!position) res.status(404).json({ status: false, message: "position is required, can not update." });
+        if (!reference) res.status(404).json({ status: false, message: "reference is required, can not update." });
+        if (!communication_skills) res.status(404).json({ status: false, message: "communication skills is required, can not update." });
+        if (!experience_at_joiningtime) res.status(404).json({ status: false, message: "experience at joiningtime is required, can not update." });
+        if (!total_experience) res.status(404).json({ status: false, message: "total_experience is required, can not update." });
+
+        // validate fields to update
+        const allowedFields = ['joining_id', 'teacher_name', 'email', 'address', 'mobile', 'privious_salary', 'position', 'reference', 'communication_skills', 'experience_at_joiningtime', 'experience_at_joiningtime', 'total_experience'];
+        const unknownFields = Object.keys(req.body).filter(field => !allowedFields.includes(field));
+        if (unknownFields.length > 0) {
+            return res.status(400).json({ status: false, message: `Unknown fields: ${unknownFields.join(', ')}` });
+        }
+
+        db.query(`select * from teacher_joining where joining_id = '${joining_id}'`, (error, result) => {
+            if (error) return res.status({ status: false, message: `Failed to update item, Please try again. '${error}'` });
+            if (result.length > 0) {
+                db.query(`update teacher_joining set 
+                teacher_name = '${teacher_name}',
+                email = '${email}',
+                address = '${address}',
+                mobile = '${mobile}',
+                privious_salary = '${privious_salary}',
+                position = '${position}',
+                reference = '${reference}',
+                communication_skills = '${communication_skills}',
+                experience_at_joiningtime = '${experience_at_joiningtime}',
+                total_experience = '${total_experience}'
+                where joining_id = '${joining_id}'`, (error, result) => {
+                    if (error) {
+                        res.status(500).json({ status: false, messsage: "Failed to fetch data, can't update." });
+                    } else {
+                        res.status(200).json({ status: true, message: "item updated successfully.", res: result });
+                    }
+                });
+            } else {
+                res.status(500).json({ status: false, message: "Item not found" });
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ status: false, message: `Internal server error. '${error}''` });
+    }
+}
+
 // delete product api 
 exports.delete_product = async (req, res) => {
     const id = req.body.id;
@@ -801,7 +854,7 @@ exports.delete_product = async (req, res) => {
         if (id) {
             db.query(`select id from product where id = '${id}'`, (error, result) => {
                 if (error) {
-                    res.status(200).json({ status: false, message: "Can not delete this" });
+                    res.status(200).json({ status: false, message: "Can not delete this." });
                 } else {
                     if (result.length > 0) {
                         db.query(`delete from product where id  = '${id}'`, (error, result) => {
@@ -918,6 +971,35 @@ exports.delete_salary_management = async (req, res) => {
     }
 };
 
+// delete_teacher_joining_management api 
+exports.delete_teacher_joining_management = async (req, res) => {
+    try {
+        const { joining_id } = req.body;
+        if (!joining_id) return res.status(404).json({ status: false, message: "id required, can't delete item" });
+
+        db.query(`select joining_id from teacher_joining where joining_id = '${joining_id}'`, (error, result) => {
+            if (error) {
+                res.status(500).json({ status: false, message: `Failed to fetch data, Please try again.` });
+                return;
+            };
+            if (result.length > 0) {
+                db.query(`delete from teacher_joining where joining_id = '${joining_id}'`, (error, result) => {
+                    if (error) {
+                        res.status(500).json({ status: false, message: `Failed to fetch item, Please try again. '${error}'` });
+                    } else {
+                        res.status(200).json({ status: false, message: "Item deleted Successfully.", res: result });
+                    }
+                });
+            } else {
+                res.status(500).json({ status: false, message: "Item does't exists!" });
+            }
+        });
+
+
+    } catch (error) {
+
+    }
+}
 
 
 

@@ -25,12 +25,14 @@ router.post('/update_product', controller.update_product);
 router.post('/update_add_teacher_management', controller.update_add_teacher_management);
 router.post('/update_track_teacher_management', controller.update_track_teacher_management);
 router.post('/update_salary_management', controller.update_salary_management);
+router.post('/update_teacher_joining_management', controller.update_teacher_joining_management);
 
 // all delete api
 router.post('/delete_product', controller.delete_product);
 router.post('/delete_add_teacher_management', controller.delete_add_teacher_management);
 router.post('/delete_track_teacher_management',controller.delete_track_teacher_management);
 router.post('/delete_salary_management', controller.delete_salary_management);
+router.post('/delete_teacher_joining_management', controller.delete_teacher_joining_management)
 
 
 
