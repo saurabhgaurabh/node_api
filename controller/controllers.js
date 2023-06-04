@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt')
 const speakeasy = require('speakeasy')
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = 'N84itri-HUb*t9@phId$'
+const fs = require('fs');
 
 
 
@@ -354,63 +355,18 @@ exports.track_teacher_management = async (req, res) => {
             teacher_img,
         } = req.body;
 
-        if (!teacher_name) {
-            res.status(404).json({ status: false, message: "Teacher Name required." });
-            return;
-        }
+        if (!teacher_name) return res.status(404).json({ status: false, message: "Teacher Name required." });
+        if (!email) return res.status(404).json({ status: false, message: "Email is required" });
+        if (!mobile) return res.status(404).json({ status: false, message: "Mobile required" });
+        if (!previous_organization) return res.status(404).json({ status: false, message: "Previous Organization is Required" });
+        if (!experience) return res.status(404).json({ status: false, message: "experience is required" });
+        if (!qualification) return res.status(404).json({ status: false, message: "qualification is required" });
+        if (!no_of_degree) return res.status(404).json({ status: false, message: "no_of_degree is required" });
+        if (!permanent_residence) return res.status(404).json({ status: false, message: "permanent_residence is required" });
+        if (!current_residence) return res.status(404).json({ status: false, message: "current_residence is required" });
+        if (!previous_position) return res.status(404).json({ status: false, message: "previous_position is required" });
+        if (!current_position) return res.status(404).json({ status: false, message: "current_position is required" });
 
-        if (!email) {
-            res.status(404).json({ status: false, message: "Email is required" });
-            return;
-        }
-
-        if (!mobile) {
-            res.status(404).json({ status: false, message: "Mobile required" });
-            return;
-        }
-
-        if (!previous_organization) {
-            res.status(404).json({ status: false, message: "Previous Organization is Required" });
-            return;
-        }
-
-        if (!experience) {
-            res.status(404).json({ status: false, message: "experience is required" });
-            return;
-        }
-
-        if (!qualification) {
-            res.status(404).json({ status: false, message: "qualification is required" });
-            return;
-        }
-
-        if (!no_of_degree) {
-            res.status(404).json({ status: false, message: "no_of_degree is required" });
-            return;
-        }
-
-        if (!permanent_residence) {
-            res.status(404).json({ status: false, message: "permanent_residence is required" });
-            return;
-        }
-
-        if (!current_residence) {
-            res.status(404).json({ status: false, message: "current_residence is required" });
-            return;
-        }
-
-        if (!previous_position) {
-            res.status(404).json({ status: false, message: "previous_position is required" });
-            return;
-        }
-
-        if (!current_position) {
-            res.status(404).json({ status: false, message: "current_position is required" });
-            return;
-        }
-
-        // const base64Data = img_highschool.split(';base64,').pop(); // Extract base64 data
-        // const imageType = img_highschool.match(/^data:image\/(.*);base64,/)[1]; // Extract image type
 
         const trackTeacherData = {
             teacher_name,
@@ -424,11 +380,23 @@ exports.track_teacher_management = async (req, res) => {
             current_residence,
             previous_position,
             current_position,
-            // img_highschool: `${imageType};base64,${base64Data}`, // Set the image data with the correct format
-            adhar_card,
-            pan_Card,
-            teacher_img,
         };
+
+        if (img_highschool) {
+            const highschoolImgData = img_highschool.split(';base64,').pop();
+            const highschoolImgPath = `uploads/${Date.now()}_highschool.jpg`;
+
+            fs.writeFile(highschoolImgPath, highschoolImgData, { encoding: 'base64' }, (err) => {
+                if (err) {
+                    console.error(err, "error of file");
+                    res.status(500).json({ status: false, message: "Failed to save high school image." });
+                    return;
+                }
+            });
+
+            trackTeacherData.img_highschool = highschoolImgPath;
+        }
+
 
         db.query(`select * from track_teacher where email = '${email}'`, (error, result) => {
             if (error) {
