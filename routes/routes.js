@@ -27,7 +27,7 @@ router.post('/update_add_teacher_management', controller.update_add_teacher_mana
 router.post('/update_track_teacher_management', controller.update_track_teacher_management);
 router.post('/update_salary_management', controller.update_salary_management);
 router.post('/update_teacher_joining_management', controller.update_teacher_joining_management);
-// router.post('/myclas')
+router.post('/update_myclas_management', controller.update_myclas_management);
 
 // all delete api
 router.post('/delete_product', controller.delete_product);

@@ -513,7 +513,7 @@ exports.myclass_management = async (req, res) => {
             } else if (result.length > 0) {
                 res.status(409).json({ status: true, message: "Item already exists!" });
             } else {
-                db.query(`insert into myclass set ?`, myClassData , (error, result) => {
+                db.query(`insert into myclass set ?`, myClassData, (error, result) => {
                     if (error) {
                         res.status(500).json({ status: false, message: "Failed to fetch data, Please try again." });
                     } else {
@@ -791,9 +791,8 @@ exports.update_salary_management = async (req, res) => {
     }
 };
 
-
 // update_teacher_joining_management api
-exports.update_teacher_joining_management = async = (req, res) => {
+exports.update_teacher_joining_management = async (req, res) => {
     try {
         const { joining_id, teacher_name, email, address, mobile, privious_salary, position, reference, communication_skills, experience_at_joiningtime, total_experience } = req.body;
 
@@ -843,6 +842,37 @@ exports.update_teacher_joining_management = async = (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ status: false, message: `Internal server error. '${error}''` });
+    }
+}
+
+// update_myclas_management api 
+exports.update_myclas_management = async (req, res) => {
+    try {
+        const { classID, class_name_numeric, class_name_alphabate } = req.body;
+        if (!classID) return res.status(404).json({ status: false, message: "id is required, can't delete." });
+        if (!class_name_numeric) return res.status(404).json({ status: false, message: "class_name_numeric is required, can't delete." });
+        if (!class_name_alphabate) return res.status(404).json({ status: false, message: "class_name_alphabate is required, can't delete." });
+
+        db.query(`select * from myclass where classID = '${classID}'`, (error, result) => {
+            if (error) {
+                res.status(500).json({ status: false, message: `Failed to load data, Please try again.'${error}'` });
+                return;
+            }
+            if (result.length > 0) {
+                db.query(`update myclass set class_name_numeric = '${class_name_numeric}', class_name_alphabate = '${class_name_alphabate}'
+                where classID = '${classID}'`, (error, result) => {
+                    if (error) {
+                        res.status(500).json({ status: false, message: `Failed to fetch data, Please try again. '${error}'` });
+                    } else {
+                        res.status(200).json({ status: true, message: "item updated successfully.", res: result });
+                    }
+                });
+            } else {
+                res.status(409).json({ status: true, message: "item alredy exists!" });
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ status: false, message: `Internal server error, '${error}'` });
     }
 }
 
