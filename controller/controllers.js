@@ -6,6 +6,7 @@ const speakeasy = require('speakeasy')
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = 'N84itri-HUb*t9@phId$'
 const fs = require('fs');
+const { error } = require('console');
 
 
 
@@ -496,6 +497,36 @@ exports.teacher_joining_management = async (req, res) => {
         res.status(500).json({ status: false, messaage: `Internal server error. '${error}'` });
     }
 }
+
+// myclass_management api 
+exports.myclass_management = async (req, res) => {
+    try {
+        const { class_name_numeric, class_name_alphabate } = req.body;
+
+        if (!class_name_numeric) return res.status(404).json({ status: false, message: "class in numeric is required." });
+        if (!class_name_alphabate) return res.status(404).json({ status: false, message: "class in alphabate is required." });
+
+        const myClassData = { class_name_numeric, class_name_alphabate };
+        db.query(`select * from myclass where class_name_alphabate = '${class_name_alphabate}' || class_name_numeric = '${class_name_numeric}'`, (error, result) => {
+            if (error) {
+                res.status(500).json({ status: false, message: `Failed to fetch data, Please try again. '${error}'` });
+            } else if (result.length > 0) {
+                res.status(409).json({ status: true, message: "Item already exists!" });
+            } else {
+                db.query(`insert into myclass set ?`, myClassData , (error, result) => {
+                    if (error) {
+                        res.status(500).json({ status: false, message: "Failed to fetch data, Please try again." });
+                    } else {
+                        res.status(200).json({ status: true, message: "Inserted Successfully.", res: result });
+                    }
+                });
+            }
+        });
+
+    } catch (error) {
+        res.status(500).json({ status: false, messsage: `Internal server error. '${error}'` });
+    }
+};
 
 // get product api
 exports.get_product = async (req, res) => {
