@@ -9,8 +9,6 @@ const fs = require('fs');
 const { error } = require('console');
 
 
-
-
 //login user api
 exports.login_user = async (req, res) => {
     try {
@@ -528,6 +526,40 @@ exports.myclass_management = async (req, res) => {
     }
 };
 
+
+// mybooks_management api 
+exports.mybooks_management = async (req, res) => {
+    try {
+        const { book_name, book_code, authore, edition } = req.body;
+
+        if (!book_name) return res.status(404).json({ status: false, message: "book name is required" });
+        if (!book_code) return res.status(404).json({ status: false, message: "book_code name is required" });
+        if (!authore) return res.status(404).json({ status: false, message: "authore name is required" });
+        if (!edition) return res.status(404).json({ status: false, message: "edition name is required" });
+
+        const myBookData = { book_name, book_code, authore, edition };
+
+        db.query(`select * from mybooks where book_name = '${book_name}'`, (error, result) => {
+            if (error) {
+                res.status(500).json({ status: false, message: `Failed to fetch data, please try again. '${error}'` })
+            } else if (result.length > 0) {
+                res.status(500).json({ status: false, message: "item already exists!" })
+            } else {
+                db.query(`insert into mybooks set ?`, myBookData, (error, result) => {
+                    if (error) {
+                        res.status(404).json({ status: false, message: 'Failed to insert data, Please try again.' });
+                    } else {
+                        res.status(200).json({ status: true, message: "Inserted Successfully.", res: result });
+                    }
+                });
+            }
+        });
+
+    } catch (error) {
+        res.status(500).json({ status: false, message: `Internal server error. '${error}'` });
+    }
+};
+
 // get product api
 exports.get_product = async (req, res) => {
     try {
@@ -876,6 +908,49 @@ exports.update_myclas_management = async (req, res) => {
     }
 }
 
+
+// update_mybooks_management api 
+exports.update_mybooks_management = async (req, res) => {
+    try {
+        const { bookID, book_name, book_code, authore, edition } = req.body;
+        if (!bookID) return res.status(404).json({ status: false, message: "id is reqiored," });
+        if (!book_name) return res.status(404).json({ status: false, message: "book_name is reqiored," });
+        if (!book_code) return res.status(404).json({ status: false, message: "book_code is reqiored," });
+        if (!authore) return res.status(404).json({ status: false, message: "authore is reqiored," });
+        if (!edition) return res.status(404).json({ status: false, message: "edition is reqiored," });
+
+        const allowedFields = ['bookID', 'book_name', 'book_code', 'authore', 'edition'];
+        const unknownFields = Object.keys(req.body).filter(field => !allowedFields.includes(field));
+        if (unknownFields.length > 0) {
+            return res.status(400).json({ status: false, message: `Unknown Fields ${unknownFields.join(', ')}` })
+        }
+
+        db.query(`select * from mybooks where bookID = '${bookID}'`, (error, result) => {
+            if (error) return res.status(500).json({ status: false, message: `Failed to fetch data, Please try again.` });
+            if (result.length > 0) {
+                db.query(`update mybooks set 
+                book_name = '${book_name}',
+                book_code = '${book_code}',
+                authore = '${authore}',
+                edition = '${edition}'
+                where bookID = '${bookID}'`, (error, result) => {
+                    if (error) {
+                        res.status(500).json({ status: false, message: `Failed to update data, please try again.` });
+                    } else {
+                        res.status(200).json({ status: true, message: `Item Updated Successfully.`, res: result });
+                    }
+                });
+            } else {
+                res.status(500).json({ status: false, message: "Item not found" });
+            }
+        })
+
+
+    } catch (error) {
+        res.status(500).json({ status: false, message: `Internal server error. '${error}'` });
+    }
+};
+
 // delete product api 
 exports.delete_product = async (req, res) => {
     const id = req.body.id;
@@ -1014,7 +1089,7 @@ exports.delete_teacher_joining_management = async (req, res) => {
             if (result.length > 0) {
                 db.query(`delete from teacher_joining where joining_id = '${joining_id}'`, (error, result) => {
                     if (error) {
-                        res.status(500).json({ status: false, message: `Failed to fetch item, Please try again. '${error}'` });
+                        res.status(500).json({ status: false, message: `Failed to delete item, Please try again. '${error}'` });
                     } else {
                         res.status(200).json({ status: false, message: "Item deleted Successfully.", res: result });
                     }
@@ -1024,9 +1099,67 @@ exports.delete_teacher_joining_management = async (req, res) => {
             }
         });
 
+    } catch (error) {
+        res.status(500).json({ status: false, message: `Internal server error. '${error}'` });
+    }
+};
+
+// delete_myclass_management api
+exports.delete_myclass_management = async (req, res) => {
+    try {
+        const { classID } = req.body;
+
+        if (!classID) return res.status(404).json({ status: false, message: "id is required, can't delete." });
+
+        db.query(`select * from myclass where classID = '${classID}'`, (error, result) => {
+            if (error) {
+                res.status(500).json({ status: false, message: `Failed to fetch data, Please try again. '${error}'` });
+                return;
+            }
+            if (result.length > 0) {
+                db.query(`delete from myclass where classID = '${classID}'`, (error, result) => {
+                    if (error) {
+                        res.status(500).json({ status: false, message: `Failed to delete data, Please try agian. '${error}'` });
+                    } else {
+                        res.status(200).json({ status: true, message: "Item deleted Successfully.", res: result });
+                    }
+                });
+            } else {
+                res.status(500).json({ status: false, message: "item does't exists!" });
+            }
+        });
 
     } catch (error) {
+        res.status(500).json({ status: false, message: `Internal server error. '${error}'` });
+    }
+};
 
+// delete_mybooks_managementapi 
+exports.delete_mybooks_management = async (req, res) => {
+    try {
+        const { bookID } = req.body;
+
+        if (!bookID) return res.status({ status: false, message: "id is required, can't delete item." });
+
+        db.query(`select * from mybooks where bookID = '${bookID}'`, (error, result) => {
+            if (error) return res.status(500).json({ status: false, message: `Failed to fetch data, please try again.` });
+
+            if (result.length > 0) {
+                db.query(`delete from mybooks where bookID = '${bookID}'`, (error, result) => {
+                    if (error) {
+                        res.status(500).json({ status: false, message: `Failed to delete item, Please try again. '${error}'` });
+                    } else {
+                        res.status(200).json({ status: true, message: `Item deleted Successfully.`, res: result });
+                    }
+                });
+            } else {
+                res.status(500).json({ status: false, message: `Item does not exists!` })
+            }
+        });
+
+
+    } catch (error) {
+        res.status(500).json({ status: false, message: `Internal server error. '${error}'` });
     }
 }
 
