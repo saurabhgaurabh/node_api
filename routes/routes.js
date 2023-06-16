@@ -1,8 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controller/controllers');
+const teacherController = require('../controller/teacherController');
 const nodemailer = require('nodemailer');
 
+
+router.post('/testing_teacher_track', teacherController.testing_teacher_track)
 
 // authorization api
 router.post('/login_user', controller.login_user);
@@ -39,7 +42,6 @@ router.post('/delete_salary_management', controller.delete_salary_management);
 router.post('/delete_teacher_joining_management', controller.delete_teacher_joining_management);
 router.post('/delete_myclass_management', controller.delete_myclass_management);
 router.post('/delete_mybooks_management', controller.delete_mybooks_management);
-
 
 
 

@@ -6,7 +6,7 @@ const speakeasy = require('speakeasy')
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = 'N84itri-HUb*t9@phId$'
 const fs = require('fs');
-const { error } = require('console');
+// const { error } = require('console');
 
 
 //login user api
@@ -61,7 +61,7 @@ exports.register = async (req, res) => {
                 const user = result[0];
                 // Check if user is already registered and verified
                 if (user.flag) {
-                    return res.status(400).json({ status: false, message: "User already registered and verified" });
+                    return res.status(400).json({ status: false, message: "User already registered and verified." });
                 }
                 // User exists but is not verified, update the OTP
                 const salt = bcrypt.genSaltSync(10);
@@ -394,6 +394,48 @@ exports.track_teacher_management = async (req, res) => {
             });
 
             trackTeacherData.img_highschool = highschoolImgPath;
+        }
+        if (adhar_card) {
+            const adharCardImgData = adhar_card.split(';base64,').pop();
+            const adharCardImgPath = `uploads/${Date.now()}_highschool.jpg`;
+
+            fs.writeFile(adharCardImgPath, adharCardImgData, { encoding: 'base64' }, (err) => {
+                if (err) {
+                    console.error(err, "error of file");
+                    res.status(500).json({ status: false, message: "Failed to save high school image." });
+                    return;
+                }
+            });
+
+            trackTeacherData.adhar_card = adharCardImgPath;
+        }
+        if (pan_Card) {
+            const panCardImgData = pan_Card.split(';base64,').pop();
+            const panCardImgPath = `uploads/${Date.now()}_highschool.jpg`;
+
+            fs.writeFile(panCardImgPath, panCardImgData, { encoding: 'base64' }, (err) => {
+                if (err) {
+                    console.error(err, "error of file");
+                    res.status(500).json({ status: false, message: "Failed to save high school image." });
+                    return;
+                }
+            });
+
+            trackTeacherData.pan_Card = panCardImgPath;
+        }
+        if (teacher_img) {
+            const teacherImgData = teacher_img.split(';base64,').pop();
+            const teacherImgPath = `uploads/${Date.now()}_highschool.jpg`;
+
+            fs.writeFile(teacherImgPath, teacherImgData, { encoding: 'base64' }, (err) => {
+                if (err) {
+                    console.error(err, "error of file");
+                    res.status(500).json({ status: false, message: "Failed to save high school image." });
+                    return;
+                }
+            });
+
+            trackTeacherData.teacher_img = teacherImgPath;
         }
 
 
@@ -1162,13 +1204,3 @@ exports.delete_mybooks_management = async (req, res) => {
         res.status(500).json({ status: false, message: `Internal server error. '${error}'` });
     }
 }
-
-
-
-
-
-
-
-
-
-
