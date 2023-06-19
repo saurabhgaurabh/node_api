@@ -1,16 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controller/controllers');
-const teacherController = require('../controller/teacherController');
 const nodemailer = require('nodemailer');
 
 
-router.post('/testing_teacher_track', teacherController.testing_teacher_track)
 
 // authorization api
 router.post('/login_user', controller.login_user);
 router.post('/register', controller.register);
-router.post('/verify_otp', controller.verify_otp)
+router.post('/verify_otp', controller.verify_otp);
+router.post('/forget_password', controller.forget_password);
+router.post('/verify_otp_forget_password', controller.verify_otp_forget_password);
+router.post('/update_password', controller.update_password);
 
 
 // all add items api 

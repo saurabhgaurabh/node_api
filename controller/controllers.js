@@ -76,7 +76,6 @@ exports.register = async (req, res) => {
                         return res.status(500).json({ status: false, message: `Database error while update: ${updateError}` });
                     }
                     sendOtpToEmail(email, otp); // Send updated OTP to the user's email
-
                     return res.status(200).json({ status: true, message: "OTP updated. Please verify your email." });
                 });
             } else {
@@ -106,7 +105,7 @@ exports.register = async (req, res) => {
     }
 }
 
-/// this is send email function for register
+/// this is send email function for register user api
 async function sendOtpToEmail(email, otp) {
     try {
         const transporter = nodemailer.createTransport({
@@ -173,6 +172,131 @@ exports.verify_otp = async (req, res) => {
         res.status(200).json({ status: false, message: "Email Required" })
     }
 }
+
+// forget password api...
+exports.forget_password = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(404).json({ status: false, message: "Email is required." });
+
+        var secret = speakeasy.generateSecret().base32; // New user, generate OTP and insert into database
+        var otp = speakeasy.totp({
+            secret: secret,
+            encoding: 'base32'
+        });
+
+        db.query(`select email from register_user where email = '${email}'`, (error, result) => {
+            if (error) {
+                res.status(404).json({ status: false, message: "Failed to fetch data, please try again." });
+            } else {
+                db.query(`update register_user set otp = ?, secret = ? where email = ?`, [otp, secret, email], (error, result) => {
+                    if (error) {
+                        res.status(404).json({ status: false, message: "Failed to update OTP, please try again." });
+                    } else {
+                        sendOtpToForgetPassword(email, otp)
+                        res.status(200).json({ status: true, message: "confirm email send successfully.", res: result });
+                    }
+                })
+            }
+        })
+
+    } catch (error) {
+        res.status(500).json({ status: false, message: `Internal Server Error. '${error}}'` });
+    }
+}
+
+// send email for forget password api...
+async function sendOtpToForgetPassword(email, otp) {
+    try {
+        const transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 587,
+            secure: false, // true for 465, false for other ports
+            auth: {
+                user: "leadchainsaurabh7@gmail.com",
+                pass: "szjfpgixdiaqhema",
+            },
+        });
+
+        const info = await transporter.sendMail({
+            from: '"Patiram Production 👻" <leadchainsaurabh7@gmail.com>',
+            to: email,
+            subject: "Patiram.in ✔",
+            text: `Hello user, your OTP for forget password is ${otp}`,
+            html: `<b>This is your OTP for forget password: ${otp}</b>`,
+        });
+    } catch (error) {
+        console.error("Error sending email:", error);
+    }
+}
+
+// verify opt for forget password api
+exports.verify_otp_forget_password = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        if (!email || !otp) {
+            return res.status(400).json({ status: false, message: "Email and OTP are required." });
+        }
+
+        db.query(`SELECT secret FROM register_user WHERE email = ? AND otp = ?`, [email, otp], (error, result) => {
+            if (error) {
+                res.status(500).json({ status: false, message: "Failed to fetch data, please try again." });
+            } else {
+                if (result && result.length > 0) {
+                    const isValidOTP =  speakeasy.totp.verify({
+                        encoding: 'base32',
+                        secret: result[0].secret,
+                        window: 6,
+                        token: otp
+                    })
+                    if(isValidOTP){
+                        res.status(200).json({ status: true, message: "OTP is valid." });
+                    }
+                } else {
+                    res.status(400).json({ status: false, message: "Invalid OTP." });
+                }
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ status: false, message: `Internal Server Error. '${error}'` });
+    }
+};
+
+// update password api 
+exports.update_password = async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+        if (!email || !otp || !newPassword) {
+            return res.status(400).json({ status: false, message: "Email, OTP, and newPassword are required." });
+        }
+
+        db.query(`SELECT * FROM register_user WHERE email = ? AND otp = ?`, [email, otp], (error, result) => {
+            if (error) {
+                res.status(500).json({ status: false, message: "Failed to fetch data, please try again." });
+            } else {
+                if (result && result.length > 0) {
+                    // OTP is valid, update the password
+                    const hashedPassword = bcrypt.hashSync(newPassword, 10);
+                    db.query(`UPDATE register_user SET password = ? WHERE email = ?`, [hashedPassword, email], (error, result) => {
+                        if (error) {
+                            res.status(500).json({ status: false, message: "Failed to update password, please try again." });
+                        } else {
+                            res.status(200).json({ status: true, message: "Password updated successfully." });
+                        }
+                    });
+                } else {
+                    // OTP is invalid
+                    res.status(400).json({ status: false, message: "Invalid OTP." });
+                }
+            }
+        });
+
+    } catch (error) {
+        res.status(500).json({ status: false, message: `Internal Server Error. '${error}'` });
+    }
+};
+
+
 
 // add teacher management  api 
 exports.add_teacher_management = async (req, res) => {
