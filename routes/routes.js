@@ -9,6 +9,8 @@ const nodemailer = require('nodemailer');
 router.post('/login_user', controller.login_user);
 router.post('/register', controller.register);
 router.post('/verify_otp', controller.verify_otp);
+
+// reset authorization api
 router.post('/forget_password', controller.forget_password);
 router.post('/verify_otp_forget_password', controller.verify_otp_forget_password);
 router.post('/update_password', controller.update_password);

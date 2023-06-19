@@ -146,7 +146,7 @@ exports.verify_otp = async (req, res) => {
                             secret: result[0].secret,
                             encoding: 'base32',
                             token: params.otp,
-                            window: 600,
+                            window: 60,
                         });
                         if (tokenValidates) {
                             db.query(`update register_user set flag = 1 where email = '${params.email}'`, (error, result) => {
@@ -180,6 +180,7 @@ exports.forget_password = async (req, res) => {
         if (!email) return res.status(404).json({ status: false, message: "Email is required." });
 
         var secret = speakeasy.generateSecret().base32; // New user, generate OTP and insert into database
+        console.log(secret, "secret")
         var otp = speakeasy.totp({
             secret: secret,
             encoding: 'base32'
@@ -243,13 +244,13 @@ exports.verify_otp_forget_password = async (req, res) => {
                 res.status(500).json({ status: false, message: "Failed to fetch data, please try again." });
             } else {
                 if (result && result.length > 0) {
-                    const isValidOTP =  speakeasy.totp.verify({
+                    const isValidOTP = speakeasy.totp.verify({
                         encoding: 'base32',
                         secret: result[0].secret,
                         window: 6,
                         token: otp
                     })
-                    if(isValidOTP){
+                    if (isValidOTP) {
                         res.status(200).json({ status: true, message: "OTP is valid." });
                     }
                 } else {
@@ -265,32 +266,40 @@ exports.verify_otp_forget_password = async (req, res) => {
 // update password api 
 exports.update_password = async (req, res) => {
     try {
-        const { email, otp, newPassword } = req.body;
-        if (!email || !otp || !newPassword) {
-            return res.status(400).json({ status: false, message: "Email, OTP, and newPassword are required." });
-        }
+        const { email, otp, password } = req.body;
+        console.log(req.body, "req.body")
+        if (!email || !otp || !password) return res.status(400).json({ status: false, message: "Email, OTP, and password are required." });
 
-        db.query(`SELECT * FROM register_user WHERE email = ? AND otp = ?`, [email, otp], (error, result) => {
+        db.query(`SELECT * FROM register_user WHERE email = ?`, [email], (error, result) => {
             if (error) {
                 res.status(500).json({ status: false, message: "Failed to fetch data, please try again." });
             } else {
                 if (result && result.length > 0) {
-                    // OTP is valid, update the password
-                    const hashedPassword = bcrypt.hashSync(newPassword, 10);
-                    db.query(`UPDATE register_user SET password = ? WHERE email = ?`, [hashedPassword, email], (error, result) => {
-                        if (error) {
-                            res.status(500).json({ status: false, message: "Failed to update password, please try again." });
-                        } else {
-                            res.status(200).json({ status: true, message: "Password updated successfully." });
-                        }
+                    const isValidOTP = speakeasy.totp.verify({
+                        secret: result[0].secret,
+                        encoding: 'base32',
+                        window: 60,
+                        token: otp
                     });
+                    if (isValidOTP) {
+                        const salt = bcrypt.genSaltSync(10);
+                        const hashedPassword = bcrypt.hashSync(password, salt);
+                        // OTP is valid, update the password
+                        db.query(`UPDATE register_user SET password = ? WHERE email = ?`, [hashedPassword, email], (error, result) => {
+                            if (error) {
+                                res.status(500).json({ status: false, message: `Failed to update password, please try again.'${error}'` });
+                            } else {
+                                res.status(200).json({ status: true, message: "Password updated successfully.", res: result });
+                            }
+                        });
+                    } else {
+                        res.status(200).json({ status: true, message: "Invalid OTP." });
+                    }
                 } else {
-                    // OTP is invalid
-                    res.status(400).json({ status: false, message: "Invalid OTP." });
+                    res.status(400).json({ status: false, message: "Not verified OTP." });                  // OTP is invalid
                 }
             }
         });
-
     } catch (error) {
         res.status(500).json({ status: false, message: `Internal Server Error. '${error}'` });
     }
