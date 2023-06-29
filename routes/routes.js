@@ -6,9 +6,9 @@ const nodemailer = require('nodemailer');
 
 
 // authorization api
-router.post('/login_user', controller.login_user);
 router.post('/register', controller.register);
 router.post('/verify_otp', controller.verify_otp);
+router.post('/login_user', controller.login_user);
 
 // reset authorization api
 router.post('/forget_password', controller.forget_password);
@@ -18,6 +18,7 @@ router.post('/update_password', controller.update_password);
 
 // all add items api 
 router.post('/add_product', controller.add_product);
+router.post('/category_product', controller.category_product);
 router.post('/add_teacher_management', controller.add_teacher_management);
 router.post('/track_teacher_management',controller.track_teacher_management);
 router.post('/salary_management',controller.salary_management);

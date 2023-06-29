@@ -4,9 +4,8 @@ const otpGenerator = require('otp-generator');
 const bcrypt = require('bcrypt')
 const speakeasy = require('speakeasy')
 const jwt = require('jsonwebtoken');
-const SECRET_KEY = 'N84itri-HUb*t9@phId$'
 const fs = require('fs');
-// const { error } = require('console');
+const MY_SECRET_KEY = process.env.SECRET_KEY
 
 
 //login user api
@@ -33,11 +32,13 @@ exports.login_user = async (req, res) => {
                 }
 
                 if (!passwordMatch) {
-                    res.status(200).json({ status: false, message: "Incorrect email or password." });
+                    res.status(200).json({ status: false, message: "Incorrect password." });
                     return;
-                }
-                const token = jwt.sign({ email: email }, SECRET_KEY, { expiresIn: '1h' });
-                res.status(200).json({ status: true, message: "Login successful.", token: token });
+                };
+
+                const token = jwt.sign({ email: email }, MY_SECRET_KEY, { expiresIn: '5h' });
+                const newData = result[0];
+                return res.status(200).json({ status: true, message: "Login successful.", token: token, email, newData }); // newData adding extra data 
             });
         });
     } catch (error) {
@@ -53,6 +54,7 @@ exports.register = async (req, res) => {
         if (!mobile) return res.status(400).json({ status: false, message: "Mobile number is required" });
         if (!email) return res.status(400).json({ status: false, message: "Email is required" });
         if (!password) return res.status(400).json({ status: false, message: "Password is required" });
+
         db.query(`SELECT * FROM register_user WHERE email = '${email}'`, (error, result) => {
             if (error) {
                 return res.status(500).json({ status: false, message: `Database error while select: ${error}` });
@@ -88,14 +90,13 @@ exports.register = async (req, res) => {
                 const hashedPassword = bcrypt.hashSync(password, salt);
 
                 db.query(
-                    "INSERT INTO register_user (name, mobile, email, secret, password, otp) VALUES (?, ?, ?, ?, ?, ?)",
-                    [name, mobile, email, secret, hashedPassword, otp],
+                    `INSERT INTO register_user (name, mobile, email, secret, password, otp) VALUES (?, ?, ?, ?, ?, ?)`, [name, mobile, email, secret, hashedPassword, otp],
                     (insertError) => {
                         if (insertError) {
                             return res.status(500).json({ status: false, message: `Database error while insert: ${insertError}` });
                         }
                         sendOtpToEmail(email, otp);  // Send OTP to the user's email
-                        return res.status(200).json({ status: true, message: "User registered. Please verify your email." });
+                        return res.status(200).json({ status: true, message: "User registered. Please verify your email.", name: name, mobile: mobile, email: email });
                     }
                 );
             }
@@ -305,8 +306,6 @@ exports.update_password = async (req, res) => {
     }
 };
 
-
-
 // add teacher management  api 
 exports.add_teacher_management = async (req, res) => {
     try {
@@ -463,6 +462,35 @@ exports.add_product = async (req, res) => {
     } catch (error) {
         res.status(200).json({ status: false, message: "Product is't register! 1" })
         console.log(error)
+    }
+}
+
+// add category_product api
+exports.category_product = async (req, res) => {
+    try {
+        const { cat_id, cat_name, cat_discription, cat_price } = req.body;
+        if (!cat_name) return res.status({ status: false, message: "Catemogy Name is Required." })
+        if (!cat_discription) return res.status({ status: false, message: "Catemogy Discription is Required." })
+        if (!cat_price) return res.status({ status: false, message: "Catemogy Price is Required." })
+
+        db.query(`select * from product_category where cat_name = '${cat_name}'`, (error, result) => {
+            if (error) {
+                res.status(500).json({ status: false, message: `Failed to fetch data, Please Try again. ${error}` });
+            } else if (result.length > 0) {
+                res.status(409).json({ status: false, message: "Item already exist." })
+            } else {
+                db.query(`insert into product_category set ? `, { cat_name, cat_discription, cat_price }, (error, result) => {
+                    if (error) {
+                        res.status(404).json({ status: false, message: "item can not insert." });
+                    } else {
+                        res.status(200).json({ status: false, message: "Inserted Successfully.", res: result });
+                    }
+                });
+            }
+        });
+
+    } catch (error) {
+        res.status(500).json({ status: false, message: `Internal Server Error.${error}` })
     }
 }
 
