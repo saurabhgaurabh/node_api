@@ -309,95 +309,76 @@ exports.update_password = async (req, res) => {
 // add teacher management  api 
 exports.add_teacher_management = async (req, res) => {
     try {
-        const {
-            teacher_name,
-            age,
-            email_teacher,
-            address_teacher,
-            username_teacher,
-            salary,
-            password,
-            confirm_password,
-            school_id,
-            eligibility,
-            no_of_degree,
-            experience,
-            joining_date,
-            position
-        } = req.body;
-        if (teacher_name) {
-            if (age) {
-                if (email_teacher) {
-                    if (address_teacher) {
-                        if (username_teacher) {
-                            if (password) {
-                                if (password === confirm_password) {
-                                    db.query(
-                                        `SELECT * FROM addteachermanagement WHERE teacher_name = '${teacher_name}' AND email_teacher = '${email_teacher}'`, (error, result) => {
-                                            if (error) {
-                                                res.status(409).json({ status: true, message: "Duplicate Record Can't Accept" });
-                                            } else if (result.length > 0) {
-                                                res.status(422).json({ status: true, message: "Already Exist" });
-                                            } else {
-                                                const saltRounds = 10;
-                                                bcrypt.hash(password, saltRounds, (error, hashedPassword) => {
-                                                    if (error) {
-                                                        res.status(500).json({ status: true, message: "Internal Server Error" });
-                                                    } else {
-                                                        var school_id = speakeasy.totp({
-                                                            encoding: 'base32'
-                                                        });
-                                                        db.query(`INSERT INTO addteachermanagement SET ?`, {
-                                                            teacher_name,
-                                                            age,
-                                                            email_teacher,
-                                                            address_teacher,
-                                                            username_teacher,
-                                                            salary,
-                                                            password: hashedPassword, // Store the hashed password
-                                                            confirm_password,
-                                                            school_id,
-                                                            eligibility,
-                                                            no_of_degree,
-                                                            experience,
-                                                            position
-                                                        }, (error, result) => {
-                                                            if (error) {
-                                                                res.status(200).json({ status: true, message: "Incorrect Details" });
-                                                            } else {
-                                                                sendPasswordToEmail(email_teacher, school_id, teacher_name);
-                                                                res.status(200).json({ status: true, res: result });
-                                                            }
-                                                        }
-                                                        );
-                                                    }
-                                                });
-                                            }
-                                        }
-                                    );
-                                } else {
-                                    res.status(400).json({ status: true, message: "Password Mismatch" });
-                                }
-                            } else {
-                                res.status(200).json({ status: true, message: "Password Required" });
-                            }
-                        } else {
-                            res.status(200).json({ status: true, message: "Username Required" });
-                        }
-                    } else {
-                        res.status(200).json({ status: true, message: "Address Required" });
-                    }
-                } else {
-                    res.status(200).json({ status: true, message: "Email Required" });
-                }
+        const { username_teacher, teacher_name, age, email_teacher, address_teacher,  salary, mobile, password, confirm_password, school_id, image, eligibility, no_of_degree, experience, joining_date, position } = req.body;
+       
+        if (!username_teacher) return res.status(500).json({ status: false, message: "Teacher Username Required" });
+        if (!teacher_name) return res.status(500).json({ status: false, message: "Teacher Name is Required" });
+        if (!age) return res.status(500).json({ status: false, message: "Age Required" });
+        if (!email_teacher) return res.status(500).json({ status: false, message: "Email Required" });
+        if (!address_teacher) return res.status(500).json({ status: false, message: "Address Required" });
+        if (!mobile) return res.status(500).json({ status: false, message: "mobile is Required" });
+        if (!password) return res.status(500).json({ status: false, message: "Password Required" });
+        if (!password === confirm_password) return res.status(500).json({ status: false, message: "Password Mismatch" });
+        console.log(image,"image")
+        if (!image) return res.status(500).json({ status: false, message: "image Teacher Required" });
+        
+
+        db.query(`SELECT * FROM addteachermanagement WHERE teacher_name = '${teacher_name}' AND email_teacher = '${email_teacher}'`, (error, result) => {
+            if (error) {
+                res.status(409).json({ status: true, message: "Duplicate Record Can't Accept" });
+            } else if (result.length > 0) {
+                res.status(422).json({ status: true, message: "Already Exist" });
             } else {
-                res.status(200).json({ status: true, message: "Age Required" });
+                const saltRounds = 10;
+                bcrypt.hash(password, saltRounds, (error, hashedPassword) => {
+                    if (error) {
+                        res.status(500).json({ status: true, message: "Internal Server Error" });
+                    } else {
+                        var school_id = speakeasy.totp({
+                            encoding: 'base32'
+                        });
+
+                        const addTeacherData = { teacher_name, age, email_teacher, address_teacher, username_teacher, salary, mobile,password: hashedPassword, confirm_password, school_id, eligibility, no_of_degree, experience, position };
+                        console.log(addTeacherData," addteacher data...")
+                        if (image) {
+                            const teacherImgData = image.split(';base64,').pop();
+                            const teacherImgPath = `uploads/${Date.now()}_highschool.jpg`;
+
+                            fs.writeFile(teacherImgPath, teacherImgData, { encoding: 'base64' }, (err) => {
+                                if (err) {
+                                    console.error(err, "error of file");
+                                    res.status(500).json({ status: false, message: "Failed to save teacher image." });
+                                    return;
+                                }
+                            });
+
+                            addTeacherData.image = teacherImgPath;
+                        }
+                        db.query(`INSERT INTO addteachermanagement SET ?`, addTeacherData, (error, result) => {
+                            if (error) {
+                                res.status(200).json({ status: false, message: `Incorrect Details. ${error}` });
+                            } else {
+                                sendPasswordToEmail(email_teacher, school_id, teacher_name);
+                                db.query('SELECT * FROM addteachermanagement', (error, rows) => {
+                                    if (error) {
+                                      return res.status(200).json({ status: false, message: `Error retrieving data. ${error}` });
+                                    }
+                                    
+                                    const apiData = [];
+                                    rows.forEach((row) => {
+                                      apiData.push(row);
+                                    });
+                                return res.status(200).json({ status: true, res: result, message:"Inserted Successfully." , data: apiData });
+                            });
+                            }
+                        });
+                    }
+                });
             }
-        } else {
-            res.status(200).json({ status: 200, message: "Teacher Name Required" });
         }
+        );
     } catch (error) {
-        res.status(500).json({ status: true, message: "Internal Server Error" });
+        res.status(500).json({ status: true, message: `Internal Server Error. ${error}` });
     }
 };
 /// this is send email function for add_teacher_management
@@ -624,6 +605,7 @@ exports.track_teacher_management = async (req, res) => {
 exports.salary_management = async (req, res) => {
     try {
         const { teacher_name, month, salary, position, performance, attendance } = req.body;
+
         if (!teacher_name) return res.status(404).json({ status: false, message: "teacher name is required" });
         if (!month) return res.status(404).json({ status: false, message: "month is required" });
         if (!salary) return res.status(404).json({ status: false, message: "salary is required" });
