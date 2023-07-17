@@ -19,6 +19,7 @@ router.post('/update_password', controller.update_password);
 // all add items api 
 router.post('/add_product', controller.add_product);
 router.post('/category_product', controller.category_product);
+
 router.post('/add_teacher_management', controller.add_teacher_management);
 router.post('/track_teacher_management',controller.track_teacher_management);
 router.post('/salary_management',controller.salary_management);

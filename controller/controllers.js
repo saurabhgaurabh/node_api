@@ -309,8 +309,8 @@ exports.update_password = async (req, res) => {
 // add teacher management  api 
 exports.add_teacher_management = async (req, res) => {
     try {
-        const { username_teacher, teacher_name, age, email_teacher, address_teacher,  salary, mobile, password, confirm_password, school_id, image, eligibility, no_of_degree, experience, joining_date, position } = req.body;
-       
+        const { username_teacher, teacher_name, age, email_teacher, address_teacher, salary, mobile, password, confirm_password, school_id, image, base64File, eligibility, no_of_degree, experience, joining_date, position } = req.body;
+
         if (!username_teacher) return res.status(500).json({ status: false, message: "Teacher Username Required" });
         if (!teacher_name) return res.status(500).json({ status: false, message: "Teacher Name is Required" });
         if (!age) return res.status(500).json({ status: false, message: "Age Required" });
@@ -319,9 +319,9 @@ exports.add_teacher_management = async (req, res) => {
         if (!mobile) return res.status(500).json({ status: false, message: "mobile is Required" });
         if (!password) return res.status(500).json({ status: false, message: "Password Required" });
         if (!password === confirm_password) return res.status(500).json({ status: false, message: "Password Mismatch" });
-        console.log(image,"image")
+        // console.log(image,"image")
         if (!image) return res.status(500).json({ status: false, message: "image Teacher Required" });
-        
+
 
         db.query(`SELECT * FROM addteachermanagement WHERE teacher_name = '${teacher_name}' AND email_teacher = '${email_teacher}'`, (error, result) => {
             if (error) {
@@ -338,10 +338,10 @@ exports.add_teacher_management = async (req, res) => {
                             encoding: 'base32'
                         });
 
-                        const addTeacherData = { teacher_name, age, email_teacher, address_teacher, username_teacher, salary, mobile,password: hashedPassword, confirm_password, school_id, eligibility, no_of_degree, experience, position };
-                        console.log(addTeacherData," addteacher data...")
+                        const addTeacherData = { teacher_name, age, email_teacher, address_teacher, username_teacher, salary, mobile, password: hashedPassword, confirm_password, school_id, eligibility, no_of_degree, experience, position };
+                        console.log(addTeacherData, " addteacher data...")
                         if (image) {
-                            const teacherImgData = image.split(';base64,').pop();
+                            const teacherImgData = base64File?.split(';base64,').pop();
                             const teacherImgPath = `uploads/${Date.now()}_highschool.jpg`;
 
                             fs.writeFile(teacherImgPath, teacherImgData, { encoding: 'base64' }, (err) => {
@@ -354,6 +354,8 @@ exports.add_teacher_management = async (req, res) => {
 
                             addTeacherData.image = teacherImgPath;
                         }
+                        console.log(addTeacherData,"addTeacherData")
+
                         db.query(`INSERT INTO addteachermanagement SET ?`, addTeacherData, (error, result) => {
                             if (error) {
                                 res.status(200).json({ status: false, message: `Incorrect Details. ${error}` });
@@ -361,15 +363,14 @@ exports.add_teacher_management = async (req, res) => {
                                 sendPasswordToEmail(email_teacher, school_id, teacher_name);
                                 db.query('SELECT * FROM addteachermanagement', (error, rows) => {
                                     if (error) {
-                                      return res.status(200).json({ status: false, message: `Error retrieving data. ${error}` });
+                                        return res.status(200).json({ status: false, message: `Error retrieving data. ${error}` });
                                     }
-                                    
                                     const apiData = [];
                                     rows.forEach((row) => {
-                                      apiData.push(row);
+                                        apiData.push(row);
                                     });
-                                return res.status(200).json({ status: true, res: result, message:"Inserted Successfully." , data: apiData });
-                            });
+                                    return res.status(200).json({ status: true, res: result, message: "Inserted Successfully.", data: apiData });
+                                });
                             }
                         });
                     }
@@ -502,8 +503,8 @@ exports.track_teacher_management = async (req, res) => {
         if (!previous_organization) return res.status(404).json({ status: false, message: "Previous Organization is Required" });
         if (!experience) return res.status(404).json({ status: false, message: "experience is required" });
         if (!qualification) return res.status(404).json({ status: false, message: "qualification is required" });
-        if (!no_of_degree) return res.status(404).json({ status: false, message: "no_of_degree is required" });
-        if (!permanent_residence) return res.status(404).json({ status: false, message: "permanent_residence is required" });
+        // if (!no_of_degree) return res.status(404).json({ status: false, message: "no_of_degree is required" });
+        if (!permanent_residence) return res.status(404).json({ status: false, message: "permanent residence is required" });
         if (!current_residence) return res.status(404).json({ status: false, message: "current_residence is required" });
         if (!previous_position) return res.status(404).json({ status: false, message: "previous_position is required" });
         if (!current_position) return res.status(404).json({ status: false, message: "current_position is required" });
@@ -591,7 +592,18 @@ exports.track_teacher_management = async (req, res) => {
                     if (error) {
                         res.status(500).json({ status: false, message: "Failed to insert item. Please try again." });
                     } else {
-                        res.status(200).json({ status: true, message: "Inserted Successfully", res: result })
+                        db.query(`select * from track_teacher`, (error, rows) => {
+                            if (error) {
+                                return res.status(404).json({ stats: false, message: `Error retrieving data. ${error}` });
+                            }
+                            else {
+                                const trackTeacherData = [];
+                                rows.forEach((row) => {
+                                    trackTeacherData.push(row);
+                                });
+                                res.status(200).json({ status: true, message: "Inserted Successfully", res: result, trackTeacherData })
+                            }
+                        })
                     }
                 });
             }
