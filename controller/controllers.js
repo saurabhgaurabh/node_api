@@ -525,7 +525,7 @@ exports.track_teacher_management = async (req, res) => {
         };
 
         if (img_highschool) {
-            const highschoolImgData = img_highschool.split(';base64,').pop();
+            const highschoolImgData = base64File.split(';base64,').pop();
             const highschoolImgPath = `uploads/${Date.now()}_highschool.jpg`;
 
             fs.writeFile(highschoolImgPath, highschoolImgData, { encoding: 'base64' }, (err) => {
@@ -539,7 +539,7 @@ exports.track_teacher_management = async (req, res) => {
             trackTeacherData.img_highschool = highschoolImgPath;
         }
         if (adhar_card) {
-            const adharCardImgData = adhar_card.split(';base64,').pop();
+            const adharCardImgData = base64File.split(';base64,').pop();
             const adharCardImgPath = `uploads/${Date.now()}_highschool.jpg`;
 
             fs.writeFile(adharCardImgPath, adharCardImgData, { encoding: 'base64' }, (err) => {
@@ -553,7 +553,7 @@ exports.track_teacher_management = async (req, res) => {
             trackTeacherData.adhar_card = adharCardImgPath;
         }
         if (pan_Card) {
-            const panCardImgData = pan_Card.split(';base64,').pop();
+            const panCardImgData = base64File.split(';base64,').pop();
             const panCardImgPath = `uploads/${Date.now()}_highschool.jpg`;
 
             fs.writeFile(panCardImgPath, panCardImgData, { encoding: 'base64' }, (err) => {
@@ -567,7 +567,7 @@ exports.track_teacher_management = async (req, res) => {
             trackTeacherData.pan_Card = panCardImgPath;
         }
         if (teacher_img) {
-            const teacherImgData = teacher_img.split(';base64,').pop();
+            const teacherImgData = base64File.split(';base64,').pop();
             const teacherImgPath = `uploads/${Date.now()}_highschool.jpg`;
 
             fs.writeFile(teacherImgPath, teacherImgData, { encoding: 'base64' }, (err) => {
