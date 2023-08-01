@@ -354,7 +354,7 @@ exports.add_teacher_management = async (req, res) => {
 
                             addTeacherData.image = teacherImgPath;
                         }
-                        console.log(addTeacherData,"addTeacherData")
+                        console.log(addTeacherData, "addTeacherData")
 
                         db.query(`INSERT INTO addteachermanagement SET ?`, addTeacherData, (error, result) => {
                             if (error) {
@@ -483,6 +483,7 @@ exports.track_teacher_management = async (req, res) => {
             teacher_name,
             email,
             mobile,
+            current_organization,
             previous_organization,
             experience,
             qualification,
@@ -495,12 +496,14 @@ exports.track_teacher_management = async (req, res) => {
             adhar_card,
             pan_Card,
             teacher_img,
+            base64File
         } = req.body;
 
         if (!teacher_name) return res.status(404).json({ status: false, message: "Teacher Name required." });
         if (!email) return res.status(404).json({ status: false, message: "Email is required" });
         if (!mobile) return res.status(404).json({ status: false, message: "Mobile required" });
         if (!previous_organization) return res.status(404).json({ status: false, message: "Previous Organization is Required" });
+        if (!current_organization) return res.status(404).json({ status: false, message: "Current Organization is Required" });
         if (!experience) return res.status(404).json({ status: false, message: "experience is required" });
         if (!qualification) return res.status(404).json({ status: false, message: "qualification is required" });
         // if (!no_of_degree) return res.status(404).json({ status: false, message: "no_of_degree is required" });
@@ -514,6 +517,7 @@ exports.track_teacher_management = async (req, res) => {
             teacher_name,
             email,
             mobile,
+            current_organization,
             previous_organization,
             experience,
             qualification,
@@ -523,6 +527,7 @@ exports.track_teacher_management = async (req, res) => {
             previous_position,
             current_position,
         };
+        console.log(trackTeacherData, " track teacher data...")
 
         if (img_highschool) {
             const highschoolImgData = base64File.split(';base64,').pop();
@@ -545,7 +550,7 @@ exports.track_teacher_management = async (req, res) => {
             fs.writeFile(adharCardImgPath, adharCardImgData, { encoding: 'base64' }, (err) => {
                 if (err) {
                     console.error(err, "error of file");
-                    res.status(500).json({ status: false, message: "Failed to save high school image." });
+                    res.status(500).json({ status: false, message: "Failed to save Adhar image." });
                     return;
                 }
             });
